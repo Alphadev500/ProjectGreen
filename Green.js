@@ -55,7 +55,7 @@ const Green = {
 		},
 		hengUp: () => {
 			document.querySelector('.el-button.el-button--danger').click();
-		}
+		},
 		answer: () => {
 			document.querySelector('.el-button.el-button--success').click();
 		}
@@ -66,11 +66,13 @@ const Green = {
 
 			Green.setTimeout(() => {
 				try {
-					Green.click.refusedCall();
+					Green.clicks.refusedCall();
+					Green.setTimeout(() => {
+						Green.clicks.callConfirm()
+					}, 1000, 1500);
 				} catch (e) {
-					console.log('ref null');
+					Green.clicks.callConfirm()
 				}
-				Green.setTimeout(() => Green.clicks.callConfirm(), 1000, 1500);
 					
 				if (Green.sendEmail) {
 					Green.clicks.emailIcon();
@@ -87,7 +89,7 @@ const Green = {
 		});	
 	},
 	userAnswered : () => {
-		let innerText = document.querySelector('.status-call-start');
+		let innerText = document.querySelector('.status-call-start').innerText;
 
 		if (innerText == "The customer picked up the phone.") return true;
 
@@ -111,10 +113,10 @@ const Green = {
 	},
 	order: () => {
 		Green.setTimeout(() => {
-			if (typeof Green.playerName().e != 'undefined') Green.sendEmailAndCall();
+			if (Green.playerName().e != null) Green.sendEmailAndCall();
 			else Green.callTab();
 
-		}, 5000, false); 
+		}, 4000, false); 
 	},
 };
 
