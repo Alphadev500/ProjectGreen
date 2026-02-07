@@ -26,7 +26,7 @@ const Green = {
 	},
 	playerName: (callback=null) => {
 		let nameElement = document.querySelector(".player-title");
-		if (callback) nameElement.addEventListener("click", callback);
+		if (callback) document.querySelector('.el-button.el-button--success').addEventListener("click", callback);
 
 		return {
 			e: nameElement,
@@ -72,18 +72,18 @@ const Green = {
 		}
 	},
 	sendEmailAndCall () {
+		Green.clicks.phoneIcon();
+		
 		Green.playerName(() => {
-			Green.clicks.phoneIcon();
-
 			Green.setTimeout(() => {
 				try {
                     Green.clicks.refusedCall()
 				} catch (e) {
 					console.log('ref null');
 				}
-				Green.setTimeout(() => {
-                    Green.clicks.callConfirm()
-                }, 800, 1000);
+				// Green.setTimeout(() => {
+                //     Green.clicks.callConfirm()
+                // }, 800, 1000);
 
 				if (Green.sendEmail) {
 					Green.clicks.emailIcon();
@@ -132,6 +132,5 @@ const Green = {
 };
 
 Green.order();
-
 
 
