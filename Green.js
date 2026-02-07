@@ -26,8 +26,9 @@ const Green = {
 	},
 	playerName: (callback=null) => {
 		let nameElement = document.querySelector(".player-title");
-		if (callback) document.querySelector('.el-button.el-button--success').addEventListener("click", callback);
-
+        Green.setTimeout(() => {
+            if (callback) document.querySelector('.el-button.el-button--success').addEventListener("click", callback);
+        });
 		return {
 			e: nameElement,
 		}
@@ -73,7 +74,7 @@ const Green = {
 	},
 	sendEmailAndCall () {
 		Green.clicks.phoneIcon();
-		
+
 		Green.playerName(() => {
 			Green.setTimeout(() => {
 				try {
@@ -110,7 +111,7 @@ const Green = {
 		setInterval(() => {
 			let timeOnHold = document.querySelector('.timer').innerText;
 			if (!Green.userAnswered()) {
-				if (timeOnHold == "00:00:38" || timeOnHold == "00:00:39" || timeOnHold == "00:00:40") {
+				if (timeOnHold == "00:00:36" || timeOnHold == "00:00:37" || timeOnHold == "00:00:38") {
 					Green.clicks.hengUp();
 				}
 			}
@@ -126,11 +127,7 @@ const Green = {
 		Green.setTimeout(() => {
 			if (Green.playerName().e != null) Green.sendEmailAndCall();
 			else Green.callTab();
-
-		}, 5000, false);
+		}, 4000, false);
 	},
 };
-
 Green.order();
-
-
