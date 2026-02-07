@@ -55,14 +55,14 @@ const Green = {
 		}
 	},
 	sendEmailAndCall () {
-		Green.playerName(() => {
-			Green.setTimeout(() => {
+		Green.setTimeout(() => {
+			Green.playerName(() => {
 				Green.clicks.phoneIcon();
 
 				Green.setTimeout(() => {
 					try {
 						Green.click.refusedCall();
-					} catch () {
+					} catch (e) {
 						console.log('ref null');
 					}
 					Green.setTimeout(() => Green.clicks.callConfirm());
@@ -79,8 +79,8 @@ const Green = {
 						});
 					}
 				});
-			}, 5000, false);
-		});
+			});	
+		}, 5000, false); 
 	},
 	order: () => {
 		Green.sendEmailAndCall();
@@ -88,21 +88,3 @@ const Green = {
 };
 
 Green.order();
-
- 
-
-
-
-
-(() => {
-	setInterval(() => {
-
-		let buttons = document.querySelector('.el-button.el-button--success span').innerHTML;
-			console.log(buttons);
-			console.log(buttons.innerHTML);
-			if (buttons.innerHTML !== "Enable sound playback") {
-				document.querySelector('.el-button.el-button--success').click();
-			}
-	}, 1000);
-})();
-
