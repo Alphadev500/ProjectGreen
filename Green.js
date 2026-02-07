@@ -60,6 +60,9 @@ const Green = {
 			document.querySelector('.el-button.el-button--success').click();
 		}
 	},
+	getUserId: () => {
+		return document.querySelector('.table-content').querySelectorAll('.table-row')[2].querySelector('.table-row__value').innerText;
+	},
 	sendEmailAndCall () {
 		Green.playerName(() => {
 			Green.clicks.phoneIcon();
@@ -73,6 +76,15 @@ const Green = {
 				} catch (e) {
 					Green.clicks.callConfirm()
 				}
+
+				localStorage.setItem("userId", Green.getUserId());
+
+
+				window.addEventListener("storage", (event) => {
+					if (event.key == "userId" && event.newValue == null) {
+					   	window.close(); 
+					}
+				});
 					
 				if (Green.sendEmail) {
 					Green.clicks.emailIcon();
@@ -99,7 +111,7 @@ const Green = {
 		setInterval(() => {
 			let timeOnHold = document.querySelector('.timer').innerText;
 			if (!Green.userAnswered()) {
-				if (timeOnHold == "00:00:38" || timeOnHold == "00:00:39" || timeOnHold == "00:00:40") {
+				if (timeOnHold == "00:00:39" || timeOnHold == "00:00:40") {
 					Green.clicks.hengUp();
 				}
 			}
