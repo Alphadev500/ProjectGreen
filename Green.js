@@ -1,10 +1,21 @@
+// ==UserScript==
+// @name         New Userscript
+// @namespace    http://tampermonkey.net/
+// @version      2026-01-30
+// @description  try to take over the world!
+// @author       You
+// @match        https://*/*
+// @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
+// @grant        none
+// ==/UserScript==
+
 const Green = {
 	emailNmae: "",
 	autoSendEmailTempName: "FA3L2Do30",
 	sendEmail: true,
 
 	getRandomNumber : (from, to) => {
-		return Math.random() * (from - to) + to;	
+		return Math.random() * (from - to) + to;
 	},
 	setTimeout:  (callback, from=2000, to=2900) => {
 		if (to == false) {
@@ -25,7 +36,7 @@ const Green = {
 		return document.querySelectorAll('.form-holder.half')[2].querySelectorAll('.el-select')[1];
 	},
 	getEmailTempFromId: () => {
-		return Green.getEmailTempFrom().querySelector('input').getAttribute('aria-controls'); 
+		return Green.getEmailTempFrom().querySelector('input').getAttribute('aria-controls');
 	},
 	selectEmailTemp : (ID) => {
 		document.querySelector('#' + ID).querySelectorAll('li').forEach(li => {
@@ -60,32 +71,20 @@ const Green = {
 			document.querySelector('.el-button.el-button--success').click();
 		}
 	},
-	getUserId: () => {
-		return document.querySelector('.table-content').querySelectorAll('.table-row')[2].querySelector('.table-row__value').innerText;
-	},
 	sendEmailAndCall () {
 		Green.playerName(() => {
 			Green.clicks.phoneIcon();
 
 			Green.setTimeout(() => {
 				try {
-					Green.clicks.refusedCall();
-					Green.setTimeout(() => {
-						Green.clicks.callConfirm()
-					}, 1000, 1500);
+                    Green.clicks.refusedCall()
 				} catch (e) {
-					Green.clicks.callConfirm()
+					console.log('ref null');
 				}
+				Green.setTimeout(() => {
+                    Green.clicks.callConfirm()
+                }, 800, 1000);
 
-				localStorage.setItem("userId", Green.getUserId());
-
-
-				window.addEventListener("storage", (event) => {
-					if (event.key == "userId" && event.newValue == null) {
-					   	window.close(); 
-					}
-				});
-					
 				if (Green.sendEmail) {
 					Green.clicks.emailIcon();
 
@@ -98,7 +97,7 @@ const Green = {
 					});
 				}
 			}, 1000, 1500);
-		});	
+		});
 	},
 	userAnswered : () => {
 		let innerText = document.querySelector('.status-call-start').innerText;
@@ -111,7 +110,7 @@ const Green = {
 		setInterval(() => {
 			let timeOnHold = document.querySelector('.timer').innerText;
 			if (!Green.userAnswered()) {
-				if (timeOnHold == "00:00:39" || timeOnHold == "00:00:40") {
+				if (timeOnHold == "00:00:38" || timeOnHold == "00:00:39" || timeOnHold == "00:00:40") {
 					Green.clicks.hengUp();
 				}
 			}
@@ -128,10 +127,11 @@ const Green = {
 			if (Green.playerName().e != null) Green.sendEmailAndCall();
 			else Green.callTab();
 
-		}, 4000, false); 
+		}, 5000, false);
 	},
 };
 
 Green.order();
+
 
 
