@@ -73,7 +73,7 @@ const Green = {
 						Green.setTimeout(() => {
 							Green.clicks.emailTemp();
 							Green.setTimeout(() => {
-								Green.clicks.selectEmailTemp(Green.clicks.getEmailTempFromId());
+								Green.clicks.selectEmailTemp(Green.getEmailTempFromId());
 								Green.setTimeout(() => Green.sendEmail());
 							});
 						});
