@@ -43,7 +43,7 @@ const Green = {
 		},
 		emailIcon: () => {
 			document.querySelector('.flaticon-multimedia-2.table-row__image.email-img').click();
-		}
+		},
 		emailTemp: () => {
 			Green.getEmailTempFrom().querySelector('.el-select__wrapper').click();
 		},
@@ -54,27 +54,36 @@ const Green = {
 			document.querySelector('.form__btn.form__btn-success').click();
 		}
 	},
-	order: () => {
-		Green.setTimeout(() => {
-			Green.clicks.phoneIcon();
-
+	sendEmailAndCall () {
+		Green.playerName(() => {
 			Green.setTimeout(() => {
-				Green.click.refusedCall();
-				Green.setTimeout(() => Green.clicks.callConfirm());
-				
-				if (Green.sendEmail) {
-					Green.clicks.emailIcon();
+				Green.clicks.phoneIcon();
 
-					Green.setTimeout(() => {
-						Green.clicks.emailTemp();
+				Green.setTimeout(() => {
+					try {
+						Green.click.refusedCall();
+					} catch () {
+						console.log('ref null');
+					}
+					Green.setTimeout(() => Green.clicks.callConfirm());
+					
+					if (Green.sendEmail) {
+						Green.clicks.emailIcon();
+
 						Green.setTimeout(() => {
-							Green.clicks.selectEmailTemp(Green.clicks.getEmailTempFromId());
-							Green.setTimeout(() => Green.sendEmail());
+							Green.clicks.emailTemp();
+							Green.setTimeout(() => {
+								Green.clicks.selectEmailTemp(Green.clicks.getEmailTempFromId());
+								Green.setTimeout(() => Green.sendEmail());
+							});
 						});
-					});
-				}
-			});
-		}, 5000, false);
+					}
+				});
+			}, 5000, false);
+		});
+	},
+	order: () => {
+		Green.sendEmailAndCall();
 	}
 };
 
