@@ -65,7 +65,7 @@ const Green = {
 					} catch (e) {
 						console.log('ref null');
 					}
-					Green.setTimeout(() => Green.clicks.callConfirm());
+					Green.setTimeout(() => Green.clicks.callConfirm(), 1000, 1500);
 					
 					if (Green.sendEmail) {
 						Green.clicks.emailIcon();
@@ -73,7 +73,7 @@ const Green = {
 						Green.setTimeout(() => {
 							Green.clicks.emailTemp();
 							Green.setTimeout(() => {
-								Green.clicks.selectEmailTemp(Green.getEmailTempFromId());
+								Green.selectEmailTemp(Green.getEmailTempFromId());
 								Green.setTimeout(() => Green.sendEmail());
 							});
 						});
