@@ -13,9 +13,9 @@ const Green = {
 			setTimeout(callback, Green.getRandomNumber(from, to));
 		}
 	},
-	playerName: (callback) => {
+	playerName: (callback=null) => {
 		let nameElement = document.querySelector(".player-title");
-		nameElement.addEventListener("click", callback);
+		if (callback) nameElement.addEventListener("click", callback);
 
 		return {
 			e: nameElement,
@@ -48,43 +48,76 @@ const Green = {
 			Green.getEmailTempFrom().querySelector('.el-select__wrapper').click();
 		},
 		refusedCall: () => {
-			document.querySelector('.el-button.el-button--danger.is-plain.mt-4').click();
+			document.querySelector('.el-button.el-button--danger').click();
 		},
 		sendEmail: () => {
 			document.querySelector('.form__btn.form__btn-success').click();
+		},
+		hengUp: () => {
+			document.querySelector('.el-button.el-button--danger').click();
+		}
+		answer: () => {
+			document.querySelector('.el-button.el-button--success').click();
 		}
 	},
 	sendEmailAndCall () {
-		Green.setTimeout(() => {
-			Green.playerName(() => {
-				Green.clicks.phoneIcon();
+		Green.playerName(() => {
+			Green.clicks.phoneIcon();
 
-				Green.setTimeout(() => {
-					try {
-						Green.click.refusedCall();
-					} catch (e) {
-						console.log('ref null');
-					}
-					Green.setTimeout(() => Green.clicks.callConfirm(), 1000, 1500);
+			Green.setTimeout(() => {
+				try {
+					Green.click.refusedCall();
+				} catch (e) {
+					console.log('ref null');
+				}
+				Green.setTimeout(() => Green.clicks.callConfirm(), 1000, 1500);
 					
-					if (Green.sendEmail) {
-						Green.clicks.emailIcon();
+				if (Green.sendEmail) {
+					Green.clicks.emailIcon();
 
+					Green.setTimeout(() => {
+						Green.clicks.emailTemp();
 						Green.setTimeout(() => {
-							Green.clicks.emailTemp();
-							Green.setTimeout(() => {
-								Green.selectEmailTemp(Green.getEmailTempFromId());
-								Green.setTimeout(() => Green.sendEmail());
-							});
+							Green.selectEmailTemp(Green.getEmailTempFromId());
+							Green.setTimeout(() => Green.clicks.sendEmail());
 						});
-					}
-				});
-			});	
-		}, 5000, false); 
+					});
+				}
+			}, 1000, 1500);
+		});	
+	},
+	userAnswered : () => {
+		let innerText = document.querySelector('.status-call-start');
+
+		if (innerText == "The customer picked up the phone.") return true;
+
+		return false;
+	},
+	callTab: () => {
+		setInterval(() => {
+			let timeOnHold = document.querySelector('.timer').innerText;
+			if (!Green.userAnswered()) {
+				if (timeOnHold == "00:00:38" || timeOnHold == "00:00:39" || timeOnHold == "00:00:40") {
+					Green.clicks.hengUp();
+				}
+			}
+		}, 1000);
+		setInterval(() => {
+			let buttons = document.querySelector('.el-button.el-button--success span').innerHTML;
+			if (buttons.innerHTML !== "Enable sound playback") {
+				Green.clicks.answer();
+			}
+		}, 1000);
 	},
 	order: () => {
-		Green.sendEmailAndCall();
-	}
+		Green.setTimeout(() => {
+			if (typeof Green.playerName().e != 'undefined') Green.sendEmailAndCall();
+			else Green.callTab();
+
+		}, 5000, false); 
+	},
 };
 
 Green.order();
+
+
