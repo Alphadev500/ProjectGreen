@@ -13,7 +13,7 @@ const Green = {
 	emailNmae: "",
 	autoSendEmailTempName: "FA3L2Do30",
 	sendEmail: true,
-
+	page: false,
 	getRandomNumber : (from, to) => {
 		return Math.random() * (from - to) + to;
 	},
@@ -69,7 +69,7 @@ const Green = {
 			document.querySelector('.el-button.el-button--danger').click();
 		},
 		answer: () => {
-			document.querySelector('.el-button.el-button--success').click();
+			document.querySelector('.block-btn-call').querySelector('.el-button.el-button--success').click();
 		}
 	},
 	sendEmailAndCall () {
@@ -123,7 +123,16 @@ const Green = {
 			}
 		}, 1000);
 	},
+	// detectPage: (callback) => {
+	// 	setInterval(() => {
+	// 		if (Green.page == false) {
+	// 			let 
+	// 			if ()
+	// 		}
+	// 	}, 1000);
+	// },
 	order: () => {
+		//setInterval();
 		Green.setTimeout(() => {
 			if (Green.playerName().e != null) Green.sendEmailAndCall();
 			else Green.callTab();
