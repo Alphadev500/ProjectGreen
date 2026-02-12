@@ -7,6 +7,7 @@
 // @match        https://*/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        none
+// @run-at document-end
 // ==/UserScript==
 
 const Green = {
