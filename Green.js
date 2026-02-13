@@ -124,14 +124,170 @@ const Green = {
 			}
 		}, 1000);
 	},
-	// detectPage: (callback) => {
-	// 	setInterval(() => {
-	// 		if (Green.page == false) {
-	// 			let 
-	// 			if ()
-	// 		}
-	// 	}, 1000);
-	// },
+	Calls: {
+
+	    STATUS: {
+	        WAITING: 1,
+	        ON_CALL: 2,
+	        DONE: 3
+	    },
+
+	    DB_KEY: "calls_db",
+
+	    // 🔥 In-memory tab references (CANNOT be in localStorage)
+	    openWindows: {},
+
+	    // ========================
+	    // DB Helpers
+	    // ========================
+
+	    getDB: () => {
+	        return JSON.parse(localStorage.getItem(Calls.DB_KEY)) || {};
+	    },
+
+	    saveDB: (db) => {
+	        localStorage.setItem(Calls.DB_KEY, JSON.stringify(db));
+	    },
+
+	    createUserIfNotExists: (userId) => {
+	        const db = Calls.getDB();
+
+	        if (!db[userId]) {
+	            db[userId] = {
+	                status: Calls.STATUS.WAITING,
+	                tabs: {},
+	                createdAt: Date.now()
+	            };
+	            Calls.saveDB(db);
+	        }
+	    },
+
+	    setUserStatus: (userId, status) => {
+	        const db = Calls.getDB();
+	        if (!db[userId]) return;
+
+	        db[userId].status = status;
+
+	        if (status === Calls.STATUS.DONE) {
+	            db[userId].doneAt = Date.now();
+	        }
+
+	        Calls.saveDB(db);
+	    },
+
+	    // ========================
+	    // 🔥 NEW: Grab Links & Open Tabs
+	    // ========================
+
+	    collectLinksAndOpen: (selector) => {
+
+	        const links = document.querySelectorAll(selector);
+	        const db = Calls.getDB();
+
+	        links.forEach((link, index) => {
+
+	            const url = link.href;
+	            const userId = link.dataset.userId; // require data-user-id on link
+
+	            if (!userId || !url) return;
+
+	            Calls.createUserIfNotExists(userId);
+
+	            // Open tab
+	            const win = window.open(url, "_blank");
+
+	            const tabId = "tab_" + userId + "_" + Date.now();
+
+	            // Save window reference in memory
+	            Calls.openWindows[tabId] = win;
+
+	            // Save metadata in DB
+	            db[userId].tabs[tabId] = {
+	                url: url,
+	                status: Calls.STATUS.WAITING,
+	                openedAt: Date.now()
+	            };
+	        });
+
+	        Calls.saveDB(db);
+	    },
+
+	    // ========================
+	    // Close Tabs By User
+	    // ========================
+
+	    closeUserTabs: (userId) => {
+
+	        const db = Calls.getDB();
+	        if (!db[userId]) return;
+
+	        Object.keys(db[userId].tabs).forEach(tabId => {
+
+	            const win = Calls.openWindows[tabId];
+
+	            if (win && !win.closed) {
+	                win.close();
+	            }
+
+	            delete Calls.openWindows[tabId];
+	        });
+	    },
+
+	    // ========================
+	    // Watch DB for DONE
+	    // ========================
+
+	    watchForDone: () => {
+
+	        window.addEventListener("storage", (event) => {
+
+	            if (event.key !== Calls.DB_KEY) return;
+
+	            const db = Calls.getDB();
+
+	            Object.keys(db).forEach(userId => {
+
+	                if (db[userId].status === Calls.STATUS.DONE) {
+	                    Calls.closeUserTabs(userId);
+	                }
+
+	            });
+
+	        });
+
+	    },
+
+	    // ========================
+	    // Cleanup DONE after 1 min
+	    // ========================
+
+	    cleanupDone: () => {
+
+	        const db = Calls.getDB();
+	        const now = Date.now();
+
+	        Object.keys(db).forEach(userId => {
+
+	            const user = db[userId];
+
+	            if (
+	                user.status === Calls.STATUS.DONE &&
+	                user.doneAt &&
+	                now - user.doneAt > 60000
+	            ) {
+	                delete db[userId];
+	            }
+
+	        });
+
+	        Calls.saveDB(db);
+	    },
+
+	    init: () => {
+	        Calls.watchForDone();
+	        setInterval(() => Calls.cleanupDone(), 10000);
+	    }
+	},
 	order: () => {
 		//setInterval();
 		Green.setTimeout(() => {
