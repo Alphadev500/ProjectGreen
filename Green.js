@@ -7,13 +7,14 @@
 // @match        https://*/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        none
-// @run-at document-end
 // ==/UserScript==
 
 const Green = {
-	emailNmae: "",
 	autoSendEmailTempName: "FA3L2Do30",
 	sendEmail: true,
+	userFTD: false,
+	callCanselIntervals: [36, 37, 38],
+	onCall: false,
 	page: false,
 	getRandomNumber : (from, to) => {
 		return Math.random() * (from - to) + to;
@@ -27,12 +28,21 @@ const Green = {
 	},
 	playerName: (callback=null) => {
 		let nameElement = document.querySelector(".player-title");
-        Green.setTimeout(() => {
-            if (callback) document.querySelector('.el-button.el-button--success').addEventListener("click", callback);
-        });
-		return {
+       	Green.setTimeout(() => {
+
+        	if (callback) {
+        		document.querySelector('.el-button.el-button--success').addEventListener("click", callback);
+      		}
+      	});
+      	return {
 			e: nameElement,
 		}
+	},
+	getSearchTabName : () => {
+		return document.querySelector('.main-container');
+	},
+	getCallTabName : () => {
+		return document.querySelector('.page-holder .wrapper .connect span');
 	},
 	getEmailTempFrom: () => {
 		return document.querySelectorAll('.form-holder.half')[2].querySelectorAll('.el-select')[1];
@@ -51,9 +61,6 @@ const Green = {
 		phoneIcon: () => {
 			document.querySelector('.table-row__image.call-img').click();
 		},
-		callConfirm: () => {
-			document.querySelector('.el-button.el-button--success').click();
-		},
 		emailIcon: () => {
 			document.querySelector('.flaticon-multimedia-2.table-row__image.email-img').click();
 		},
@@ -70,22 +77,55 @@ const Green = {
 			document.querySelector('.el-button.el-button--danger').click();
 		},
 		answer: () => {
-			document.querySelector('.block-btn-call').querySelector('.el-button.el-button--success').click();
+			try {
+				document.querySelector('.block-btn-call').querySelector('.el-button.el-button--success').click();
+			} catch (e) {
+				console.log('nathing to do');
+			} 
+		}
+	},
+	saveAndCloseLeedsPage: {
+		getUserId: () => {
+			return document.querySelector('.table-content').querySelectorAll('.table-row')[2].querySelector('.table-row__value').innerText;
+		},
+		saveUserId: () => {
+			localStorage.setItem("user", JSON.stringify({
+				userId: Green.saveAndCloseLeedsPage.getUserId(),
+				status: "onCall"
+			}));
+		},
+		removeUserId: () => {
+			localStorage.removeItem("user");
+		},
+		actOnChange: () => {
+			window.addEventListener("storage", function (event) {
+			    if (event.key !== "user") return;
+
+			    let currentUserID = Green.saveAndCloseLeedsPage.getUserId();
+			    const content = JSON.parse(event.newValue);
+
+			    if (content.status == "close" && content.userId == currentUserID) {
+			    	Green.saveAndCloseLeedsPage.removeUserId();
+			    	window.close();
+			    }
+			});
+		},
+		init: () => {
+			Green.saveAndCloseLeedsPage.actOnChange();
+			Green.saveAndCloseLeedsPage.saveUserId();
 		}
 	},
 	sendEmailAndCall () {
 		Green.clicks.phoneIcon();
 
 		Green.playerName(() => {
+			Green.saveAndCloseLeedsPage.init();
 			Green.setTimeout(() => {
 				try {
                     Green.clicks.refusedCall()
 				} catch (e) {
 					console.log('ref null');
 				}
-				// Green.setTimeout(() => {
-                //     Green.clicks.callConfirm()
-                // }, 800, 1000);
 
 				if (Green.sendEmail) {
 					Green.clicks.emailIcon();
@@ -108,192 +148,110 @@ const Green = {
 
 		return false;
 	},
-	callTab: () => {
-		setInterval(() => {
-			let timeOnHold = document.querySelector('.timer').innerText;
-			if (!Green.userAnswered()) {
-				if (timeOnHold == "00:00:36" || timeOnHold == "00:00:37" || timeOnHold == "00:00:38") {
-					Green.clicks.hengUp();
+	getCallTabTimer: () => {
+		return document.querySelector('.timer').innerText;
+	},
+	getProperTime: (timeString) => {
+		const parts = timeString.split(":");
+
+		const hours = parseInt(parts[0], 10);
+		const minutes = parseInt(parts[1], 10);
+		const seconds = parseInt(parts[2], 10);
+
+		return {hours, minutes, seconds}
+	},
+	getRandomIntervalNumber: () => { 
+    	return Green.callCanselIntervals[Math.floor(Math.random() * Green.callCanselIntervals.length)];
+	},
+	setCallAsEnded: () => {
+		for (let i = 0; i < localStorage.length; i++) {
+		    const key = localStorage.key(i);
+			if (key !== "user") continue;
+
+		    let currentContent = localStorage.getItem(key);
+		    currentContent = JSON.parse(currentContent);
+
+		    localStorage.setItem("user", JSON.stringify({
+		    	userId: currentContent.userId, 
+		    	status: "close"
+		    }));
+		}
+	},
+	callCansleDetect: () => {
+		let timeOnHold = Green.getCallTabTimer();
+		let properTime = Green.getProperTime(timeOnHold);
+		if (timeOnHold.trim().length != 0) {
+			Green.onCall = true;
+		}
+
+		if (localStorage.getItem("user") != null && Green.onCall) {  
+				if (properTime.minutes >= 2) {
+					Green.userFTD = true;
+				}
+					
+				if (timeOnHold == '' && Green.userFTD == false) {
+					Green.onCall = false;
+					Green.setCallAsEnded();
+				}
+
+				if (!Green.userAnswered()) { 
+					if (properTime.seconds === Green.getRandomIntervalNumber()) {
+						Green.clicks.hengUp();
+					}
 				}
 			}
-		}, 1000);
+	},
+	callTab: () => { 
 		setInterval(() => {
+			Green.callCansleDetect();
+		}, 1000); 
+		setInterval(() => { 
 			let buttons = document.querySelector('.el-button.el-button--success span').innerHTML;
 			if (buttons.innerHTML !== "Enable sound playback") {
+				Green.userFTD = false;
 				Green.clicks.answer();
 			}
 		}, 1000);
 	},
-	Calls: {
 
-	    STATUS: {
-	        WAITING: 1,
-	        ON_CALL: 2,
-	        DONE: 3
-	    },
-
-	    DB_KEY: "calls_db",
-
-	    // 🔥 In-memory tab references (CANNOT be in localStorage)
-	    openWindows: {},
-
-	    // ========================
-	    // DB Helpers
-	    // ========================
-
-	    getDB: () => {
-	        return JSON.parse(localStorage.getItem(Calls.DB_KEY)) || {};
-	    },
-
-	    saveDB: (db) => {
-	        localStorage.setItem(Calls.DB_KEY, JSON.stringify(db));
-	    },
-
-	    createUserIfNotExists: (userId) => {
-	        const db = Calls.getDB();
-
-	        if (!db[userId]) {
-	            db[userId] = {
-	                status: Calls.STATUS.WAITING,
-	                tabs: {},
-	                createdAt: Date.now()
-	            };
-	            Calls.saveDB(db);
-	        }
-	    },
-
-	    setUserStatus: (userId, status) => {
-	        const db = Calls.getDB();
-	        if (!db[userId]) return;
-
-	        db[userId].status = status;
-
-	        if (status === Calls.STATUS.DONE) {
-	            db[userId].doneAt = Date.now();
-	        }
-
-	        Calls.saveDB(db);
-	    },
-
-	    // ========================
-	    // 🔥 NEW: Grab Links & Open Tabs
-	    // ========================
-
-	    collectLinksAndOpen: (selector) => {
-
-	        const links = document.querySelectorAll(selector);
-	        const db = Calls.getDB();
-
-	        links.forEach((link, index) => {
-
-	            const url = link.href;
-	            const userId = link.dataset.userId; // require data-user-id on link
-
-	            if (!userId || !url) return;
-
-	            Calls.createUserIfNotExists(userId);
-
-	            // Open tab
-	            const win = window.open(url, "_blank");
-
-	            const tabId = "tab_" + userId + "_" + Date.now();
-
-	            // Save window reference in memory
-	            Calls.openWindows[tabId] = win;
-
-	            // Save metadata in DB
-	            db[userId].tabs[tabId] = {
-	                url: url,
-	                status: Calls.STATUS.WAITING,
-	                openedAt: Date.now()
-	            };
-	        });
-
-	        Calls.saveDB(db);
-	    },
-
-	    // ========================
-	    // Close Tabs By User
-	    // ========================
-
-	    closeUserTabs: (userId) => {
-
-	        const db = Calls.getDB();
-	        if (!db[userId]) return;
-
-	        Object.keys(db[userId].tabs).forEach(tabId => {
-
-	            const win = Calls.openWindows[tabId];
-
-	            if (win && !win.closed) {
-	                win.close();
-	            }
-
-	            delete Calls.openWindows[tabId];
-	        });
-	    },
-
-	    // ========================
-	    // Watch DB for DONE
-	    // ========================
-
-	    watchForDone: () => {
-
-	        window.addEventListener("storage", (event) => {
-
-	            if (event.key !== Calls.DB_KEY) return;
-
-	            const db = Calls.getDB();
-
-	            Object.keys(db).forEach(userId => {
-
-	                if (db[userId].status === Calls.STATUS.DONE) {
-	                    Calls.closeUserTabs(userId);
-	                }
-
-	            });
-
-	        });
-
-	    },
-
-	    // ========================
-	    // Cleanup DONE after 1 min
-	    // ========================
-
-	    cleanupDone: () => {
-
-	        const db = Calls.getDB();
-	        const now = Date.now();
-
-	        Object.keys(db).forEach(userId => {
-
-	            const user = db[userId];
-
-	            if (
-	                user.status === Calls.STATUS.DONE &&
-	                user.doneAt &&
-	                now - user.doneAt > 60000
-	            ) {
-	                delete db[userId];
-	            }
-
-	        });
-
-	        Calls.saveDB(db);
-	    },
-
-	    init: () => {
-	        Calls.watchForDone();
-	        setInterval(() => Calls.cleanupDone(), 10000);
-	    }
+	searchTab : {
+		loadUsers : () => {
+			document.querySelectorAll('.table-body tr').forEach((e) => {
+				let href = e.querySelector('.sticky-body .item-actions a').getAttribute('href');
+				Green.setTimeout(() => {
+					window.open(href, "_blank");
+				}, 200, 300);
+			});
+		},
+		init : () => {
+			document.querySelector('.show-by .show-by__title')
+				.addEventListener('click', Green.searchTab.loadUsers);
+		}
 	},
-	order: () => {
-		//setInterval();
-		Green.setTimeout(() => {
-			if (Green.playerName().e != null) Green.sendEmailAndCall();
-			else Green.callTab();
-		}, 4000, false);
+	detectPage: (callback) => {
+		let intervalID = setInterval(() => {
+	 		let app = document.querySelector('#app');
+	 		if (app !== null && typeof app.innerText != 'undefined') {
+	 			Green.page = false;
+
+	 			if (Green.playerName().e !== null) {
+	 				Green.page = "Leed";
+	 				clearInterval(intervalID);
+	 				Green.sendEmailAndCall();
+	 			} else if (Green.getCallTabName() !== null) {
+	 				Green.page = "Call";
+	 				clearInterval(intervalID);
+	 				Green.callTab();
+	 			} else if (Green.getSearchTabName() !== null) {
+	 				Green.page = "Search";
+	 				clearInterval(intervalID);
+	 				Green.searchTab.init();
+	 			} 
+	 		}
+       }, 500);
+	},
+	init: () => {
+		Green.detectPage();
 	},
 };
-Green.order();
+Green.init();
