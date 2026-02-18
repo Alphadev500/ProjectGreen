@@ -68,7 +68,11 @@ const Green = {
 			Green.getEmailTempFrom().querySelector('.el-select__wrapper').click();
 		},
 		refusedCall: () => {
-			document.querySelector('.el-button.el-button--danger').click();
+            try {
+                document.querySelector('.el-button.el-button--danger').click();
+			} catch (e) {
+                console.log('ref null');
+			}
 		},
 		sendEmail: () => {
 			document.querySelector('.form__btn.form__btn-success').click();
@@ -78,10 +82,13 @@ const Green = {
 		},
 		answer: () => {
 			try {
+                if (document.querySelector('.block-btn-call') !== null) {
+                   Green.userFTD = false;
+                }
 				document.querySelector('.block-btn-call').querySelector('.el-button.el-button--success').click();
 			} catch (e) {
 				console.log('nathing to do');
-			} 
+			}
 		}
 	},
 	saveAndCloseLeedsPage: {
@@ -118,14 +125,12 @@ const Green = {
 	sendEmailAndCall () {
 		Green.clicks.phoneIcon();
 
+        Green.setTimeout(Green.clicks.refusedCall, 1000, 1500);
+
 		Green.playerName(() => {
 			Green.saveAndCloseLeedsPage.init();
+
 			Green.setTimeout(() => {
-				try {
-                    Green.clicks.refusedCall()
-				} catch (e) {
-					console.log('ref null');
-				}
 
 				if (Green.sendEmail) {
 					Green.clicks.emailIcon();
@@ -160,7 +165,7 @@ const Green = {
 
 		return {hours, minutes, seconds}
 	},
-	getRandomIntervalNumber: () => { 
+	getRandomIntervalNumber: () => {
     	return Green.callCanselIntervals[Math.floor(Math.random() * Green.callCanselIntervals.length)];
 	},
 	setCallAsEnded: () => {
@@ -172,7 +177,7 @@ const Green = {
 		    currentContent = JSON.parse(currentContent);
 
 		    localStorage.setItem("user", JSON.stringify({
-		    	userId: currentContent.userId, 
+		    	userId: currentContent.userId,
 		    	status: "close"
 		    }));
 		}
@@ -184,31 +189,34 @@ const Green = {
 			Green.onCall = true;
 		}
 
-		if (localStorage.getItem("user") != null && Green.onCall) {  
-				if (properTime.minutes >= 2) {
+		if (localStorage.getItem("user") != null && Green.onCall) {
+                if (properTime.minutes >= 2) {
 					Green.userFTD = true;
 				}
-					
+
+                console.log(properTime.minutes >= 2);
+
+                console.log(Green.userFTD);
+
 				if (timeOnHold == '' && Green.userFTD == false) {
 					Green.onCall = false;
 					Green.setCallAsEnded();
 				}
 
-				if (!Green.userAnswered()) { 
+				if (!Green.userAnswered()) {
 					if (properTime.seconds === Green.getRandomIntervalNumber()) {
 						Green.clicks.hengUp();
 					}
 				}
 			}
 	},
-	callTab: () => { 
+	callTab: () => {
 		setInterval(() => {
 			Green.callCansleDetect();
-		}, 1000); 
-		setInterval(() => { 
+		}, 1000);
+		setInterval(() => {
 			let buttons = document.querySelector('.el-button.el-button--success span').innerHTML;
 			if (buttons.innerHTML !== "Enable sound playback") {
-				Green.userFTD = false;
 				Green.clicks.answer();
 			}
 		}, 1000);
@@ -246,7 +254,7 @@ const Green = {
 	 				Green.page = "Search";
 	 				clearInterval(intervalID);
 	 				Green.searchTab.init();
-	 			} 
+	 			}
 	 		}
        }, 500);
 	},
