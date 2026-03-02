@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         New Userscript
+// @name         Green
 // @namespace    http://tampermonkey.net/
 // @version      2026-01-30
 // @description  try to take over the world!
@@ -29,9 +29,8 @@ const Green = {
 	playerName: (callback=null) => {
 		let nameElement = document.querySelector(".player-title");
        	Green.setTimeout(() => {
-
-        	if (callback) {
-        		document.querySelector('.el-button.el-button--success').addEventListener("click", callback);
+        		if (callback) {
+        			document.querySelector('.call-confirm .el-button.el-button--success').addEventListener("click", callback);
       		}
       	});
       	return {
@@ -125,7 +124,7 @@ const Green = {
 	sendEmailAndCall () {
 		Green.clicks.phoneIcon();
 
-        Green.setTimeout(Green.clicks.refusedCall, 1000, 1500);
+      Green.setTimeout(Green.clicks.refusedCall, 500, 800);
 
 		Green.playerName(() => {
 			Green.saveAndCloseLeedsPage.init();
