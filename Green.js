@@ -66,12 +66,13 @@ const Green = {
 		emailTemp: () => {
 			Green.getEmailTempFrom().querySelector('.el-select__wrapper').click();
 		},
-		refusedCall: () => {
-            try {
-                document.querySelector('.el-button.el-button--danger').click();
+		refusedCall: (callback) => {
+         try {
+            document.querySelector('.el-button.el-button--danger').click();
 			} catch (e) {
-                console.log('ref null');
+            console.log('ref null');
 			}
+			callback();
 		},
 		sendEmail: () => {
 			document.querySelector('.form__btn.form__btn-success').click();
@@ -81,9 +82,9 @@ const Green = {
 		},
 		answer: () => {
 			try {
-                if (document.querySelector('.block-btn-call') !== null) {
-                   Green.userFTD = false;
-                }
+         	if (document.querySelector('.block-btn-call') !== null) {
+         	   localStorage.removeItem("userFTD");
+         	}
 				document.querySelector('.block-btn-call').querySelector('.el-button.el-button--success').click();
 			} catch (e) {
 				console.log('nathing to do');
@@ -121,29 +122,38 @@ const Green = {
 			Green.saveAndCloseLeedsPage.saveUserId();
 		}
 	},
+	initOnConfirm: () => {
+		let intervalID = setInterval(() => {
+	 		let button = document.querySelector('.call-confirm .el-button.el-button--success');
+	 		if (button != null) {
+	 			Green.playerName(() => {
+					Green.saveAndCloseLeedsPage.init();
+
+					Green.setTimeout(() => {
+
+						if (Green.sendEmail) {
+							Green.clicks.emailIcon();
+
+							Green.setTimeout(() => {
+								Green.clicks.emailTemp();
+								Green.setTimeout(() => {
+									Green.selectEmailTemp(Green.getEmailTempFromId());
+									Green.setTimeout(() => Green.clicks.sendEmail());
+								});
+							});
+						}
+					}, 1000, 1500);
+				});
+	 			clearInterval(intervalID);
+	 		}
+	 	}, 500);
+	},
 	sendEmailAndCall () {
 		Green.clicks.phoneIcon();
 
-      Green.setTimeout(Green.clicks.refusedCall, 500, 800);
-
-		Green.playerName(() => {
-			Green.saveAndCloseLeedsPage.init();
-
-			Green.setTimeout(() => {
-
-				if (Green.sendEmail) {
-					Green.clicks.emailIcon();
-
-					Green.setTimeout(() => {
-						Green.clicks.emailTemp();
-						Green.setTimeout(() => {
-							Green.selectEmailTemp(Green.getEmailTempFromId());
-							Green.setTimeout(() => Green.clicks.sendEmail());
-						});
-					});
-				}
-			}, 1000, 1500);
-		});
+		Green.setTimeout(() => {
+      	Green.clicks.refusedCall(() => Green.initOnConfirm());
+      }, 1000, 1500);
 	},
 	userAnswered : () => {
 		let innerText = document.querySelector('.status-call-start').innerText;
@@ -189,25 +199,22 @@ const Green = {
 		}
 
 		if (localStorage.getItem("user") != null && Green.onCall) {
-                if (properTime.minutes >= 2) {
-					Green.userFTD = true;
-				}
+         if (properTime.minutes >= 2) {
+				localStorage.setItem('userFTD', true);
+			}
 
-                console.log(properTime.minutes >= 2);
+			if (timeOnHold == '' && localStorage.getItem('userFTD') != true  && Green.onCall == true) {
+				Green.onCall = false;
+				Green.setCallAsEnded();
+			}
 
-                console.log(Green.userFTD);
-
-				if (timeOnHold == '' && Green.userFTD == false) {
+			if (!Green.userAnswered()) {
+				if (properTime.seconds === Green.getRandomIntervalNumber()) {
 					Green.onCall = false;
-					Green.setCallAsEnded();
-				}
-
-				if (!Green.userAnswered()) {
-					if (properTime.seconds === Green.getRandomIntervalNumber()) {
-						Green.clicks.hengUp();
-					}
+					Green.clicks.hengUp();
 				}
 			}
+		}
 	},
 	callTab: () => {
 		setInterval(() => {
@@ -246,6 +253,7 @@ const Green = {
 	 				clearInterval(intervalID);
 	 				Green.sendEmailAndCall();
 	 			} else if (Green.getCallTabName() !== null) {
+	 				localStorage.removeItem("userFTD");
 	 				Green.page = "Call";
 	 				clearInterval(intervalID);
 	 				Green.callTab();
