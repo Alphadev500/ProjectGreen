@@ -46,7 +46,7 @@ function hengUp () {
 }
 
 function saveOnHengUp () {
-    hengUpButton.addEventListener('click', () => {
+    hengUpButton().addEventListener('click', () => {
         localStorage.setItem('OnCall', false);
     });
 }
