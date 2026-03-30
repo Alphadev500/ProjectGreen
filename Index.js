@@ -1,16 +1,5 @@
-// ==UserScript==
-// @name         Green
-// @namespace    http://tampermonkey.net/
-// @version      2026-01-30
-// @description  try to take over the world!
-// @author       You
-// @match        https://*/*
-// @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
-// @grant        none
-// ==/UserScript==
-
 const Green = {
-    autoSendEmailTempName: "FA3L2Do30",
+    autoSendEmailTempName: "OnCallAutoEmails",
     sendEmail: true,
     userFTD: false,
     callCanselIntervals: [36, 37, 38],
