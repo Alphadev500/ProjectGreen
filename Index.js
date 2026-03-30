@@ -44,6 +44,7 @@ const Green = {
     },
     init: () => {
         DetectPage();
+        console.log('Page Detect');
     },
 };
 
