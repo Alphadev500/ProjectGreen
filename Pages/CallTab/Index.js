@@ -45,6 +45,14 @@ function hengUp () {
     hengUpButton().click();
 }
 
+function onRightShiftClickHengUp() {
+    document.addEventListener('keydown', function(event) {
+        if (event.key === "Shift" && event.location === 2) {
+            hengUp();
+        }
+    });
+}
+
 function saveOnHengUp () {
     try {
         hengUpButton().addEventListener('click', () => {
@@ -89,6 +97,7 @@ function answer () {
 }
 
 function callTab ()  {
+    onRightShiftClickHengUp();
     setInterval(() => {
         callCanselDetect();
     }, 1000);
