@@ -46,9 +46,13 @@ function hengUp () {
 }
 
 function saveOnHengUp () {
-    hengUpButton().addEventListener('click', () => {
-        localStorage.setItem('OnCall', false);
-    });
+    try {
+        hengUpButton().addEventListener('click', () => {
+            localStorage.setItem('OnCall', false);
+        });
+    } catch (e) {
+        console.log(e);
+    }
 }
 
 function callCanselDetect () {
