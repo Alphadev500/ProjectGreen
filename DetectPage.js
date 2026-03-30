@@ -16,8 +16,6 @@ function DetectPage (callback) {
                 clearInterval(intervalID);
                 SearchTab();
             }
-            console.log(document.querySelector(".player-title"));
-            console.log(Green.page);
         }
     }, 500);
 }

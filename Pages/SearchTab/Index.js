@@ -7,5 +7,5 @@ function openUserTabs () {
     });
 }
 function SearchTab () {
-    document.querySelector('.show-by .show-by__title').addEventListener('click', openUserTabs());
+    document.querySelector('.show-by .show-by__title').addEventListener('click', openUserTabs);
 }
