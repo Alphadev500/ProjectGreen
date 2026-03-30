@@ -19,9 +19,11 @@ function DetectPage (callback) {
             } else if (DetectPageElements.getSearchTabName !== null) {
                 Green.page = "Search";
                 clearInterval(intervalID);
-                console.log('Page Search');
                 SearchTab();
             }
+
+
+            console.log('Page');
         }
     }, 500);
 }
