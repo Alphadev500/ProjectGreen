@@ -22,8 +22,8 @@ function sendEmail () {
             getEmailTempFrom().querySelector('.el-select__wrapper').click();
 
             Green.setTimeout(() => {
-                selectEmailTemp();
-                getEmailTempFrom(getEmailTempFromId());
+                selectEmailTemp(getEmailTempFromId());
+                getEmailTempFrom();
                 Green.setTimeout(() => {
                     document.querySelector('.form__btn.form__btn-success').click();
                 });
