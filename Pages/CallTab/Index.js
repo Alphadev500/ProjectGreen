@@ -47,14 +47,7 @@ function hengUp () {
 
 function actOnChangeRightShiftClickHengUp () {
     window.addEventListener("storage", function (event) {
-
-        console.log(event.key);
-
         if (event.key != "hengUp") return;
-
-        console.log(event.key);
-        console.log(event.newValue);
-
         if (event.newValue == "true") {
             hengUp();
             console.log('in tab hengUp');

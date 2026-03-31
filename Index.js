@@ -31,6 +31,13 @@ const Green = {
             }
         });
     },
+    onAltCall: () => {
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Alt" && event.location === 2) {
+                document.querySelector('.table-row__image.call-img').click();
+            }
+        });
+    },
     initOnConfirm: () => {
         let intervalID = setInterval(() => {
             Green.playerName(() => {
@@ -51,6 +58,7 @@ const Green = {
         return Green.callCanselIntervals[Math.floor(Math.random() * Green.callCanselIntervals.length)];
     },
     init: () => {
+        Green.onAltCall();
         Green.onShiftHengUp();
         DetectPage();
     },
