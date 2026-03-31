@@ -33,8 +33,15 @@ const Green = {
     },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {
-            if (event.key === "Alt" && event.location === 2) {
+            if (event.key === "Control" && event.location === 2) {
                 document.querySelector('.table-row__image.call-img').click();
+            }
+        });
+    },
+    changeSendEmailStatus: () => {
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Alt" && event.location === 2) {
+                localStorage.setItem('AutoEmails', true);
             }
         });
     },
