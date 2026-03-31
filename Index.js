@@ -26,6 +26,7 @@ const Green = {
     onShiftHengUp: () => {
         document.addEventListener('keydown', function(event) {
             if (event.key === "Shift" && event.location === 2) {
+                localStorage.removeItem("hengUp");
                 localStorage.setItem('hengUp', true);
             }
         });
