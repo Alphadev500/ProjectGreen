@@ -11,27 +11,6 @@ function removeUserId () {
     localStorage.removeItem("user");
 }
 
-function onRightAltCall () {
-    console.log('keydown function');
-    let lastShiftTime = 0;
-    const DOUBLE_PRESS_DELAY = 300;
-
-    document.addEventListener('keydown', function (event) {
-        if (event.key === "Shift" && event.location === 2 && !event.repeat) {
-            const now = Date.now();
-
-            if (now - lastShiftTime < DOUBLE_PRESS_DELAY) {
-                console.log("Right Shift double pressed!");
-
-                const el = document.querySelector('.table-row__image.call-img');
-                if (el) el.click();
-            }
-
-            lastShiftTime = now;
-        }
-    });
-}
-
 function actOnChange () {
     window.addEventListener("storage", function (event) {
         if (event.key !== "user") return;
@@ -47,7 +26,6 @@ function actOnChange () {
 }
 
 function saveAndCloseLeedsPage () {
-    onRightAltCall();
     actOnChange();
     saveUserId();
 }

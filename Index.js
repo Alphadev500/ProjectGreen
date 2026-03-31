@@ -1,5 +1,5 @@
 const Green = {
-    autoSendEmailTempName: "OnCallAutoEmails",
+    autoSendEmailTempName: "new",
     sendEmail: true,
     userFTD: false,
     callCanselIntervals: [36, 37, 38],
