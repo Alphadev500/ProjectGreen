@@ -47,10 +47,12 @@ function hengUp () {
 
 function actOnChangeRightShiftClickHengUp () {
     window.addEventListener("storage", function (event) {
+        console.log('in tab hengUp storage update');
         if (event.key !== "hengUp") return;
 
         if (event.newValue == "ture" ) {
             hengUp();
+            console.log('in tab hengUp');
             localStorage.removeItem("hengUp");
         }
     });
