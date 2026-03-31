@@ -47,11 +47,14 @@ function hengUp () {
 
 function actOnChangeRightShiftClickHengUp () {
     window.addEventListener("storage", function (event) {
+
+        console.log(event.key);
+
         if (event.key != "hengUp") return;
 
         console.log(event.key);
         console.log(event.newValue);
-        
+
         if (event.newValue == "ture" ) {
             hengUp();
             console.log('in tab hengUp');
@@ -66,7 +69,7 @@ function saveOnHengUp () {
             localStorage.setItem('OnCall', false);
         });
     } catch (e) {
-        console.log(e);
+        //console.log(e);
     }
 }
 
@@ -99,7 +102,7 @@ function answer () {
         document.querySelector('.block-btn-call').querySelector('.el-button.el-button--success').click();
         localStorage.setItem('OnCall', true);
     } catch (e) {
-        console.log('nathing to do');
+        //console.log('nathing to do');
     }
 }
 
