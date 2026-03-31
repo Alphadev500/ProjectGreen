@@ -15,6 +15,7 @@ function onRightAltCall () {
     document.addEventListener('keydown', function(event) {
         if (event.key === "Alt" && event.location === 2) {
             document.querySelector('.table-row__image.call-img').click();
+            console.log('click');
         }
     });
 }
