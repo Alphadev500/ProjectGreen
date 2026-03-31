@@ -13,14 +13,21 @@ function removeUserId () {
 
 function onRightAltCall () {
     console.log('keydown function');
-    document.addEventListener('keydown', function(event) {
-        console.log('-----');
-        console.log(event.key);
-        console.log('-----');
+    let lastShiftTime = 0;
+    const DOUBLE_PRESS_DELAY = 300;
 
-        if (event.key === "Alt" && event.location === 2) {
-            document.querySelector('.table-row__image.call-img').click();
-            console.log('click');
+    document.addEventListener('keydown', function (event) {
+        if (event.key === "Shift" && event.location === 2 && !event.repeat) {
+            const now = Date.now();
+
+            if (now - lastShiftTime < DOUBLE_PRESS_DELAY) {
+                console.log("Right Shift double pressed!");
+
+                const el = document.querySelector('.table-row__image.call-img');
+                if (el) el.click();
+            }
+
+            lastShiftTime = now;
         }
     });
 }
