@@ -47,11 +47,11 @@ function hengUp () {
 
 function actOnChangeRightShiftClickHengUp () {
     window.addEventListener("storage", function (event) {
-        if (event.key !== "hengUp") return;
+        if (event.key != "hengUp") return;
 
         console.log(event.key);
         console.log(event.newValue);
-
+        
         if (event.newValue == "ture" ) {
             hengUp();
             console.log('in tab hengUp');
