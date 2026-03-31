@@ -55,7 +55,7 @@ function actOnChangeRightShiftClickHengUp () {
         console.log(event.key);
         console.log(event.newValue);
 
-        if (event.newValue == true ) {
+        if (event.newValue == "true") {
             hengUp();
             console.log('in tab hengUp');
             localStorage.removeItem("hengUp");
