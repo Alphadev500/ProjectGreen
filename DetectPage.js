@@ -5,7 +5,7 @@ function DetectPage (callback) {
             if (document.querySelector(".player-title") !== null) {
                 Green.page = "Lead";
                 clearInterval(intervalID);
-                document.querySelector('.table-row__image.call-img').click(() => {
+                document.querySelector('.table-row__image.call-img').addEventListener('click', () => {
                     console.log('click on the call icon');
                 });
                 Green.sendEmailAndCall();
