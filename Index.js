@@ -33,7 +33,7 @@ const Green = {
     },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {
-            if (event.key === "Control" && event.location === 2) {
+            if ((event.key === "Control" && event.location === 2) || event.key === "F8") {
                 document.querySelector('.table-row__image.call-img').click();
             }
         });
