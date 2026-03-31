@@ -13,6 +13,10 @@ function removeUserId () {
 
 function onRightAltCall () {
     document.addEventListener('keydown', function(event) {
+        console.log('-----');
+        console.log(event.key);
+        console.log('-----');
+
         if (event.key === "Alt" && event.location === 2) {
             document.querySelector('.table-row__image.call-img').click();
             console.log('click');
