@@ -12,6 +12,7 @@ function removeUserId () {
 }
 
 function onRightAltCall () {
+    console.log('keydown function');
     document.addEventListener('keydown', function(event) {
         console.log('-----');
         console.log(event.key);
