@@ -45,10 +45,13 @@ function hengUp () {
     hengUpButton().click();
 }
 
-function onRightShiftClickHengUp() {
-    document.addEventListener('keydown', function(event) {
-        if (event.key === "Shift" && event.location === 2) {
+function actOnChangeRightShiftClickHengUp () {
+    window.addEventListener("storage", function (event) {
+        if (event.key !== "hengUp") return;
+
+        if (event.newValue == "ture" ) {
             hengUp();
+            localStorage.removeItem("hengUp");
         }
     });
 }
@@ -97,7 +100,7 @@ function answer () {
 }
 
 function callTab ()  {
-    onRightShiftClickHengUp();
+    actOnChangeRightShiftClickHengUp();
     setInterval(() => {
         callCanselDetect();
     }, 1000);

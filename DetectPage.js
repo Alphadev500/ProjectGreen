@@ -5,9 +5,6 @@ function DetectPage (callback) {
             if (document.querySelector(".player-title") !== null) {
                 Green.page = "Lead";
                 clearInterval(intervalID);
-                document.querySelector('.table-row__image.call-img').addEventListener('click', () => {
-                    console.log('click on the call icon');
-                });
                 Green.sendEmailAndCall();
             } else if (document.querySelector('.page-holder .wrapper .connect span') !== null) {
                 localStorage.removeItem("userFTD");

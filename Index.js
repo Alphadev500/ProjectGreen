@@ -23,6 +23,13 @@ const Green = {
             }
         });
     },
+    onShiftHengUp: () => {
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Shift" && event.location === 2) {
+                localStorage.setItem('hengUp', true);
+            }
+        });
+    },
     initOnConfirm: () => {
         let intervalID = setInterval(() => {
             Green.playerName(() => {
@@ -43,6 +50,7 @@ const Green = {
         return Green.callCanselIntervals[Math.floor(Math.random() * Green.callCanselIntervals.length)];
     },
     init: () => {
+        Green.onShiftHengUp();
         DetectPage();
     },
 };

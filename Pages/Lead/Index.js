@@ -22,7 +22,7 @@ function actOnChange () {
             removeUserId();
             window.close();
         }
-    })
+    });
 }
 
 function saveAndCloseLeedsPage () {
