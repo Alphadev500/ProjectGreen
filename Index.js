@@ -41,7 +41,11 @@ const Green = {
     changeSendEmailStatus: () => {
         document.addEventListener('keydown', function(event) {
             if (event.key === "Alt" && event.location === 2) {
-                localStorage.setItem('AutoEmails', true);
+                if (localStorage.getItem('AutoEmails') == 'true') {
+                    localStorage.setItem('AutoEmails', false);
+                } else {
+                    localStorage.setItem('AutoEmails', true);
+                }
             }
         });
     },

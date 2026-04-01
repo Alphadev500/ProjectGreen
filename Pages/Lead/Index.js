@@ -20,7 +20,11 @@ function actOnChange () {
 
         if (content.status == "close" && content.userId == currentUserID) {
             removeUserId();
-            window.close();
+            if (localStorage.getItem('userFTD')) {
+                localStorage.removeItem('userFTD');
+            } else {
+                window.close();
+            }
         }
     });
 }
