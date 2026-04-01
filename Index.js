@@ -2,7 +2,7 @@ const Green = {
     autoSendEmailTempName: "new",
     sendEmail: true,
     userFTD: false,
-    callCanselIntervals: [36, 37, 38],
+    callCanselIntervals: [35],
     onCall: false,
     page: false,
     getRandomNumber : (from, to) => {
@@ -42,8 +42,10 @@ const Green = {
         document.addEventListener('keydown', function(event) {
             if (event.key === "Alt" && event.location === 2) {
                 if (localStorage.getItem('AutoEmails') == 'true') {
+                    localStorage.removeItem('AutoEmails');
                     localStorage.setItem('AutoEmails', false);
                 } else {
+                    localStorage.removeItem('AutoEmails');
                     localStorage.setItem('AutoEmails', true);
                 }
             }
