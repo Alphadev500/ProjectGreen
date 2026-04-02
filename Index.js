@@ -160,16 +160,29 @@ const Green = {
     },
     onShiftHengUp: () => {
         document.addEventListener('keydown', function(event) {
-            if ((event.key === "Shift" && event.location === 2) || event.key === "F9") {
-                localStorage.removeItem("hengUp");
-                localStorage.setItem('hengUp', true);
+            if (localStorage.getItem('switchKeys') == 'true') {
+                if (event.key === "F9") {
+                    localStorage.removeItem("hengUp");
+                    localStorage.setItem('hengUp', true);
+                }
+            } else {
+                if ((event.key === "Shift" && event.location === 2)) {
+                    localStorage.removeItem("hengUp");
+                    localStorage.setItem('hengUp', true);
+                }
             }
         });
     },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {
-            if ((event.key === "Control" && event.location === 2) || event.key === "F8") {
-                document.querySelector('.table-row__image.call-img').click();
+            if (localStorage.getItem('switchKeys') == 'true') {
+                if (event.key === "F8") {
+                    document.querySelector('.table-row__image.call-img').click();
+                }
+            } else {
+                if ((event.key === "Control" && event.location === 2)) {
+                    document.querySelector('.table-row__image.call-img').click();
+                }
             }
         });
     },
