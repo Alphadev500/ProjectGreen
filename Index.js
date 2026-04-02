@@ -14,77 +14,80 @@ const Green = {
 
             // ===== STYLE =====
             const style = document.createElement("style");
-                    style.innerHTML = `
-                #modMenuInjected {
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%) scale(0.85);
-                    width: 320px;
-                    background: rgba(20, 20, 20, 0.95);
-                    border-radius: 14px;
-                    padding: 20px;
-                    box-shadow: 0 0 30px rgba(0,0,0,0.7);
-                    backdrop-filter: blur(10px);
-                    opacity: 0;
-                    pointer-events: none;
-                    transition: 0.2s ease;
-                    z-index: 999999;
-                    color: white;
-                    font-family: Arial, sans-serif;
-                }
-        
-                #modMenuInjected.active {
-                    opacity: 1;
-                    transform: translate(-50%, -50%) scale(1);
-                    pointer-events: all;
-                }
-        
-                #modMenuInjected h2 {
-                    text-align: center;
-                    margin-top: 0;
-                }
-        
-                .mod-option {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin: 12px 0;
-                }
-        
-                .mod-input {
-                    width: 100%;
-                    padding: 8px;
-                    border-radius: 8px;
-                    border: none;
-                    background: #222;
-                    color: white;
-                    margin-top: 5px;
-                }
-        
-                .save-btn {
-                    width: 100%;
-                    padding: 10px;
-                    margin-top: 15px;
-                    border: none;
-                    border-radius: 10px;
-                    background: #4CAF50;
-                    color: white;
-                    font-weight: bold;
-                    cursor: pointer;
-                }
-        
-                .save-btn:hover {
-                    background: #45a049;
-                }
-            `;
-                    document.head.appendChild(style);
+            style.innerHTML = `
+        #modMenuInjected {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.85);
+            width: 320px;
+            background: rgba(20, 20, 20, 0.95);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
 
-                    // ===== MENU =====
-                    const menu = document.createElement("div");
-                    menu.id = "modMenuInjected";
+            display: none; /* 👈 FIXED */
+            opacity: 0;
+            pointer-events: none;
 
-                    menu.innerHTML = `
+            transition: 0.2s ease;
+            z-index: 999999;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        #modMenuInjected.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: all;
+        }
+
+        #modMenuInjected h2 {
+            text-align: center;
+            margin-top: 0;
+        }
+
+        .mod-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .mod-input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            background: #222;
+            color: white;
+            margin-top: 5px;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 10px;
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .save-btn:hover {
+            background: #45a049;
+        }
+    `;
+            document.head.appendChild(style);
+
+            // ===== MENU =====
+            const menu = document.createElement("div");
+            menu.id = "modMenuInjected";
+
+            menu.innerHTML = `
                 <h2>⚙ Mod Menu</h2>
         
                 <div class="mod-option">
@@ -130,14 +133,37 @@ const Green = {
                     autoEmailTempName: autoEmailTempName.value
                 });
 
-                // Hide menu after saving
-                menu.classList.remove("active");
+                hideMenu();
             });
+
+            // ===== SHOW MENU =====
+            function showMenu() {
+                menu.style.display = "block";
+
+                requestAnimationFrame(() => {
+                    menu.classList.add("active");
+                });
+            }
+
+            // ===== HIDE MENU =====
+            function hideMenu() {
+                menu.style.opacity = "0";
+                menu.style.pointerEvents = "none";
+
+                setTimeout(() => {
+                    menu.classList.remove("active");
+                    menu.style.display = "none";
+                }, 200);
+            }
 
             // ===== TOGGLE MENU =====
             document.addEventListener("keydown", (e) => {
                 if (e.ctrlKey && e.key.toLowerCase() === "m") {
-                    menu.classList.toggle("active");
+                    if (menu.style.display === "block") {
+                        hideMenu();
+                    } else {
+                        showMenu();
+                    }
                 }
             });
 
