@@ -8,8 +8,14 @@ function getEmailTempFromId () {
 
 function selectEmailTemp (ID) {
     document.querySelector('#' + ID).querySelectorAll('li').forEach(li => {
-        if (li.querySelector('div').innerText.trim().includes(Green.autoSendEmailTempName)) {
-            li.querySelector('div').click();
+        if (localStorage.getItem("autoEmailTempName") != null) {
+            if (li.querySelector('div').innerText.trim().includes(localStorage.getItem("autoEmailTempName"))) {
+                li.querySelector('div').click();
+            }
+        } else {
+            if (li.querySelector('div').innerText.trim().includes(Green.autoSendEmailTempName)) {
+                li.querySelector('div').click();
+            }
         }
     });
 }
