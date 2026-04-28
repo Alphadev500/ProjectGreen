@@ -211,13 +211,13 @@ const Green = {
 
         callIcon.click();
         console.log('clickCallAndConfirm');
-        Green.autoConfirmCallDialog();
+       // Green.autoConfirmCallDialog();
     },
     bindCallImageConfirm: () => {
         document.addEventListener('click', (event) => {
             const target = event.target;
             if (target && target.closest && target.closest('.table-row__image.call-img')) {
-                //Green.autoConfirmCallDialog();
+                Green.autoConfirmCallDialog();
             }
         });
     },
