@@ -205,7 +205,7 @@ const Green = {
             if (!dialog) return null;
 
             Green.setTimeout(() => {
-                dialog.querySelector('.el-button .el-button--success').click();
+                document.querySelector('.el-button .el-button--success').click();
             }, 1500, 2000);
             
             return null;
