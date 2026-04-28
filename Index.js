@@ -199,15 +199,45 @@ const Green = {
             }
         });
     },
+    autoConfirmCallDialog: () => {
+        const waitForDialog = setInterval(() => {
+            const dialog = document.querySelector('.el-dialog');
+            if (!dialog) return;
+
+            const confirmButton = document.querySelector('.call-confirm .el-button.el-button--success.mt-4');
+            if (confirmButton) {
+                clearInterval(waitForDialog);
+                confirmButton.click();
+            }
+        }, 100);
+
+        setTimeout(() => {
+            clearInterval(waitForDialog);
+        }, 10000);
+    },
+    clickCallAndConfirm: () => {
+        const callIcon = document.querySelector('.table-row__image.call-img');
+        if (!callIcon) return;
+
+        callIcon.click();
+        Green.autoConfirmCallDialog();
+    },
+    bindCallImageConfirm: () => {
+        document.addEventListener('click', (event) => {
+            if (event.target.closest('.table-row__image.call-img')) {
+                Green.autoConfirmCallDialog();
+            }
+        });
+    },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {
             if (localStorage.getItem('switchKeys') == 'true') {
                 if (event.key === "F8") {
-                    document.querySelector('.table-row__image.call-img').click();
+                    Green.clickCallAndConfirm();
                 }
             } else {
                 if ((event.key === "Control" && event.location === 2)) {
-                    document.querySelector('.table-row__image.call-img').click();
+                    Green.clickCallAndConfirm();
                 }
             }
         });
@@ -248,6 +278,7 @@ const Green = {
         Green.modManu();
         Green.onAltCall();
         Green.onShiftHengUp();
+        Green.bindCallImageConfirm();
         DetectPage();
     },
 };
