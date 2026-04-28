@@ -200,8 +200,8 @@ const Green = {
         });
     },
     autoConfirmCallDialog: () => {
+        console.log('autoConfirmCallDialog');
        Green.setTimeout(() => {
-            console.log('log');
             document.querySelector('.el-button.el-button--success').click();
         }, 1500, 2000);
     },
@@ -210,6 +210,7 @@ const Green = {
         if (!callIcon) return;
 
         callIcon.click();
+        console.log('clickCallAndConfirm');
         Green.autoConfirmCallDialog();
     },
     bindCallImageConfirm: () => {
