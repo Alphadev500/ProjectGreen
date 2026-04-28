@@ -200,48 +200,9 @@ const Green = {
         });
     },
     autoConfirmCallDialog: () => {
-        const findConfirmButton = () => {
-            const dialog = document.querySelector('.el-dialog');
-            if (!dialog) return null;
-
-            Green.setTimeout(() => {
-                document.querySelector('.el-button .el-button--success').click();
-            }, 1500, 2000);
-            
-            return null;
-        };
-
-        const clickIfReady = () => {
-            const button = findConfirmButton();
-            if (!button) return false;
-            button.click();
-            return true;
-        };
-
-        if (clickIfReady()) return;
-
-        const observer = new MutationObserver(() => {
-            if (clickIfReady()) {
-                observer.disconnect();
-                clearInterval(waitForDialog);
-                clearTimeout(timeoutId);
-            }
-        });
-
-        observer.observe(document.body, { childList: true, subtree: true });
-
-        const waitForDialog = setInterval(() => {
-            if (clickIfReady()) {
-                observer.disconnect();
-                clearInterval(waitForDialog);
-                clearTimeout(timeoutId);
-            }
-        }, 100);
-
-        const timeoutId = setTimeout(() => {
-            observer.disconnect();
-            clearInterval(waitForDialog);
-        }, 15000);
+       Green.setTimeout(() => {
+                document.querySelector('.el-button.el-button--success').click();
+        }, 1500, 2000);
     },
     clickCallAndConfirm: () => {
         const callIcon = document.querySelector('.table-row__image.call-img');
