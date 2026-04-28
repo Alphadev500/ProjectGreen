@@ -297,6 +297,9 @@ const Green = {
     initOnConfirm: () => {
         let intervalID = setInterval(() => {
             Green.playerName(() => {
+                Green.setTimeout(() => {
+                    document.querySelector('.call-confirm').querySelector('.el-button .el-button--success').click();
+                }, 1000, 1200);
                 saveAndCloseLeedsPage();
                 Green.setTimeout(() => {
                     sendEmail();
