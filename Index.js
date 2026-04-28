@@ -200,20 +200,58 @@ const Green = {
         });
     },
     autoConfirmCallDialog: () => {
-        const waitForDialog = setInterval(() => {
+        const findConfirmButton = () => {
             const dialog = document.querySelector('.el-dialog');
-            if (!dialog) return;
+            if (!dialog) return null;
 
-            const confirmButton = document.querySelector('.call-confirm .el-button.el-button--success.mt-4');
-            if (confirmButton) {
+            const selectors = [
+                '.call-confirm .el-button.el-button--success.mt-4',
+                '.call-confirm .el-button.el-button--success',
+                '.el-dialog .call-confirm .el-button.el-button--success.mt-4',
+                '.el-dialog .call-confirm .el-button.el-button--success',
+                '.el-dialog .el-button.el-button--success.mt-4',
+                '.el-dialog .el-button.el-button--success'
+            ];
+
+            for (let i = 0; i < selectors.length; i++) {
+                const button = document.querySelector(selectors[i]);
+                if (button) return button;
+            }
+
+            return null;
+        };
+
+        const clickIfReady = () => {
+            const button = findConfirmButton();
+            if (!button) return false;
+            button.click();
+            return true;
+        };
+
+        if (clickIfReady()) return;
+
+        const observer = new MutationObserver(() => {
+            if (clickIfReady()) {
+                observer.disconnect();
                 clearInterval(waitForDialog);
-                confirmButton.click();
+                clearTimeout(timeoutId);
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        const waitForDialog = setInterval(() => {
+            if (clickIfReady()) {
+                observer.disconnect();
+                clearInterval(waitForDialog);
+                clearTimeout(timeoutId);
             }
         }, 100);
 
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
+            observer.disconnect();
             clearInterval(waitForDialog);
-        }, 10000);
+        }, 15000);
     },
     clickCallAndConfirm: () => {
         const callIcon = document.querySelector('.table-row__image.call-img');
@@ -224,7 +262,8 @@ const Green = {
     },
     bindCallImageConfirm: () => {
         document.addEventListener('click', (event) => {
-            if (event.target.closest('.table-row__image.call-img')) {
+            const target = event.target;
+            if (target && target.closest && target.closest('.table-row__image.call-img')) {
                 Green.autoConfirmCallDialog();
             }
         });
