@@ -201,7 +201,7 @@ const Green = {
     },
     autoConfirmCallDialog: () => {
        Green.setTimeout(() => {
-                document.querySelector('.el-button.el-button--success').click();
+            //document.querySelector('.el-button.el-button--success').click();
         }, 1500, 2000);
     },
     clickCallAndConfirm: () => {
