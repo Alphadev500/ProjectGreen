@@ -204,20 +204,10 @@ const Green = {
             const dialog = document.querySelector('.el-dialog');
             if (!dialog) return null;
 
-            const selectors = [
-                '.call-confirm .el-button.el-button--success.mt-4',
-                '.call-confirm .el-button.el-button--success',
-                '.el-dialog .call-confirm .el-button.el-button--success.mt-4',
-                '.el-dialog .call-confirm .el-button.el-button--success',
-                '.el-dialog .el-button.el-button--success.mt-4',
-                '.el-dialog .el-button.el-button--success'
-            ];
-
-            for (let i = 0; i < selectors.length; i++) {
-                const button = document.querySelector(selectors[i]);
-                if (button) return button;
-            }
-
+            Green.setTimeout(() => {
+                dialog.querySelector('.el-button .el-button--success').click();
+            }, 1500, 2000);
+            
             return null;
         };
 
@@ -297,10 +287,6 @@ const Green = {
     initOnConfirm: () => {
         let intervalID = setInterval(() => {
             Green.playerName(() => {
-                Green.setTimeout(() => {
-                    console.log('log');
-                    document.querySelector('.call-confirm').querySelector('.el-button .el-button--success').click();
-                }, 1500, 2000);
                 saveAndCloseLeedsPage();
                 Green.setTimeout(() => {
                     sendEmail();
