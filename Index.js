@@ -252,12 +252,12 @@ const Green = {
                 Green.setTimeout(() => {
 
                     try {
-                        Green.setTimeout(() => {
-                            document.querySelector('.el-button.el-button--danger').click();
-                            Green.setTimeout(() => {
-                                document.querySelector('.el-button.el-button--success.mt-4').click();
-                            }, 1000, 1500);
-                        }, 1000, 1500);
+                        // Green.setTimeout(() => {
+                        //     document.querySelector('.el-button.el-button--danger').click();
+                        //     Green.setTimeout(() => {
+                        //         document.querySelector('.el-button.el-button--success.mt-4').click();
+                        //     }, 1000, 1500);
+                        // }, 1000, 1500);
                     } catch (e) {
                         document.querySelector('.el-button.el-button--success.mt-4').click();
                     }
