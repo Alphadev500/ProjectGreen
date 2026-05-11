@@ -187,7 +187,10 @@ const Green = {
             const dialog = document.querySelector('.el-overlay-dialog[aria-label="Call confirmation"]');
             if (!dialog) return;
 
-            const confirmButton = dialog.querySelector('.el-button.el-button--success.mt-4');
+            // Try inside the matched dialog first, then a strict fallback by class.
+            const confirmButton =
+                dialog.querySelector('.el-button.el-button--success.mt-4') ||
+                document.querySelector('.el-overlay-dialog[aria-label="Call confirmation"] .el-button.el-button--success.mt-4');
             if (!confirmButton) return;
             if (confirmButton.disabled || confirmButton.getAttribute('aria-disabled') === 'true') return;
 
@@ -208,14 +211,18 @@ const Green = {
         Green.autoConfirmCallDialog();
     },
     bindCallImageConfirm: () => {
-        document.addEventListener('click', (event) => {
+        const trigger = (event) => {
             const target = event.target;
             if (!target || !target.closest) return;
 
             if (target.closest('.table-row__image.call-img')) {
                 Green.autoConfirmCallDialog();
             }
-        });
+        };
+
+        // Capture phase catches cases where bubbling is interrupted.
+        document.addEventListener('click', trigger, true);
+        document.addEventListener('pointerup', trigger, true);
     },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {
