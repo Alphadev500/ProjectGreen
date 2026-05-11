@@ -213,13 +213,15 @@ const Green = {
     },
     initOnConfirm: () => {
         let intervalID = setInterval(() => {
-            console.log('talk-------------------------');
             Green.playerName(() => {
-                console.log('talk');
+
                 Green.setTimeout(() => {
+                    console.log(document.querySelectorAll('.table-content')[2].
+                    querySelectorAll('div')[21].querySelector('span'));
+
                     let talk = document.querySelectorAll('.table-content')[2].
                     querySelectorAll('div')[21].querySelector('span').innerText;
-                    console.log(talk);
+
                     if (talk == 'Yes') {
                         console.log('click');
                         document.querySelector('.el-button.el-button--danger').click();
