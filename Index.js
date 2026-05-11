@@ -251,8 +251,7 @@ const Green = {
         let intervalID = setInterval(() => {
             Green.playerName(() => {
                 Green.setTimeout(() => {
-
-                    document.querySelector('.el-button el-button--success mt-4').click();
+                    document.querySelector('.el-button.el-button--success mt-4').click();
                 }, 1000, 1500);
                 saveAndCloseLeedsPage();
                 Green.setTimeout(() => {
