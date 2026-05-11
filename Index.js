@@ -5,6 +5,7 @@ const Green = {
     callCanselIntervals: [35],
     onCall: false,
     page: false,
+    callConfirmWatcherActive: false,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
     },
@@ -166,10 +167,103 @@ const Green = {
             }
         });
     },
+    autoConfirmCallDialog: () => {
+        if (Green.callConfirmWatcherActive) return;
+        Green.callConfirmWatcherActive = true;
+
+        const isVisible = (el) => {
+            if (!el) return false;
+            const style = window.getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        };
+
+        const getDialogId = (dialog) => {
+            if (!dialog) return null;
+            if (!dialog.dataset.greenDialogId) {
+                dialog.dataset.greenDialogId = `green-dialog-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+            }
+            return dialog.dataset.greenDialogId;
+        };
+
+        const findDialogAndButton = () => {
+            const dialogs = document.querySelectorAll('.el-overlay-dialog[aria-label="Call confirmation"]');
+
+            for (let i = 0; i < dialogs.length; i++) {
+                const dialog = dialogs[i];
+                if (!isVisible(dialog)) continue;
+
+                const button = dialog.querySelector('.el-button.el-button--success.mt-4');
+                if (!button) continue;
+                if (!isVisible(button)) continue;
+                if (button.disabled || button.getAttribute('aria-disabled') === 'true') continue;
+
+                return { dialog, button };
+            }
+
+            return null;
+        };
+
+        const clickIfReady = () => {
+            const result = findDialogAndButton();
+            if (!result) return false;
+
+            const dialogId = getDialogId(result.dialog);
+            if (result.button.dataset.greenClicked === dialogId) return true;
+
+            result.button.dataset.greenClicked = dialogId;
+            result.button.click();
+            return true;
+        };
+
+        const cleanup = () => {
+            Green.callConfirmWatcherActive = false;
+            observer.disconnect();
+            clearInterval(waitForDialog);
+            clearTimeout(timeoutId);
+        };
+
+        if (clickIfReady()) {
+            Green.callConfirmWatcherActive = false;
+            return;
+        }
+
+        const observer = new MutationObserver(() => {
+            if (clickIfReady()) cleanup();
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        const waitForDialog = setInterval(() => {
+            if (clickIfReady()) cleanup();
+        }, 100);
+
+        const timeoutId = setTimeout(() => {
+            cleanup();
+        }, 20000);
+    },
+    clickCallAndConfirm: () => {
+        const callButton = document.querySelector('.table-row__image.call-img');
+        if (!callButton) return;
+
+        callButton.click();
+        Green.autoConfirmCallDialog();
+    },
+    bindCallImageConfirm: () => {
+        document.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!target || !target.closest) return;
+
+            if (target.closest('.table-row__image.call-img')) {
+                Green.autoConfirmCallDialog();
+            }
+        });
+    },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {
             if ((event.key === "Control" && event.location === 2) || event.key === "F8") {
-                document.querySelector('.table-row__image.call-img').click();
+                Green.clickCallAndConfirm();
             }
         });
     },
@@ -209,6 +303,7 @@ const Green = {
         Green.modManu();
         Green.onAltCall();
         Green.onShiftHengUp();
+        Green.bindCallImageConfirm();
         DetectPage();
     },
 };
