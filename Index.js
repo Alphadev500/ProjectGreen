@@ -219,6 +219,7 @@ const Green = {
                     try {
                         Green.setTimeout(() => {
                              document.querySelector('.el-button.el-button--danger').click();
+                             console.log('up');
                              Green.setTimeout(() => {
                                  document.querySelector('.el-button.el-button--success.mt-4').click();
                              }, 1000, 1500);
