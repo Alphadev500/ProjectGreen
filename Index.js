@@ -217,7 +217,7 @@ const Green = {
 
                 Green.setTimeout(() => {
                     console.log(document.querySelectorAll('.table-content')[2].
-                    querySelectorAll('div')[21].querySelector('span'));
+                    querySelectorAll('div')[21]);
 
                     let talk = document.querySelectorAll('.table-content')[2].
                     querySelectorAll('div')[21].querySelector('span').innerText;
