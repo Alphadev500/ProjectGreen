@@ -215,14 +215,14 @@ const Green = {
         let intervalID = setInterval(() => {
             Green.playerName(() => {
                 Green.setTimeout(() => {
+                    let talk = document.querySelectorAll('.table-content')[2].querySelectorAll('div')[21].querySelector('span').innerText;
 
-                    try {
+                    if (talk == 'Yes') {
                         document.querySelector('.el-button.el-button--danger').click();
-                        console.log('up');
                         Green.setTimeout(() => {
                             document.querySelector('.el-button.el-button--success.mt-4').click();
                         }, 1000, 1500);
-                    } catch (e) {
+                    } else {
                         document.querySelector('.el-button.el-button--success.mt-4').click();
                     }
 
