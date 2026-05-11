@@ -171,77 +171,34 @@ const Green = {
         if (Green.callConfirmWatcherActive) return;
         Green.callConfirmWatcherActive = true;
 
-        const isVisible = (el) => {
-            if (!el) return false;
-            const style = window.getComputedStyle(el);
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
-            const rect = el.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
-        };
+        let clicked = false;
+        const pollMs = 100;
+        const maxWaitMs = 20000;
 
-        const getDialogId = (dialog) => {
-            if (!dialog) return null;
-            if (!dialog.dataset.greenDialogId) {
-                dialog.dataset.greenDialogId = `green-dialog-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-            }
-            return dialog.dataset.greenDialogId;
-        };
-
-        const findDialogAndButton = () => {
-            const dialogs = document.querySelectorAll('.el-overlay-dialog[aria-label="Call confirmation"]');
-
-            for (let i = 0; i < dialogs.length; i++) {
-                const dialog = dialogs[i];
-                if (!isVisible(dialog)) continue;
-
-                const button = dialog.querySelector('.el-button.el-button--success.mt-4');
-                if (!button) continue;
-                if (!isVisible(button)) continue;
-                if (button.disabled || button.getAttribute('aria-disabled') === 'true') continue;
-
-                return { dialog, button };
-            }
-
-            return null;
-        };
-
-        const clickIfReady = () => {
-            const result = findDialogAndButton();
-            if (!result) return false;
-
-            const dialogId = getDialogId(result.dialog);
-            if (result.button.dataset.greenClicked === dialogId) return true;
-
-            result.button.dataset.greenClicked = dialogId;
-            result.button.click();
-            return true;
-        };
-
-        const cleanup = () => {
+        const stop = () => {
             Green.callConfirmWatcherActive = false;
-            observer.disconnect();
-            clearInterval(waitForDialog);
+            clearInterval(intervalId);
             clearTimeout(timeoutId);
         };
 
-        if (clickIfReady()) {
-            Green.callConfirmWatcherActive = false;
-            return;
-        }
+        const intervalId = setInterval(() => {
+            if (clicked) return;
 
-        const observer = new MutationObserver(() => {
-            if (clickIfReady()) cleanup();
-        });
+            const dialog = document.querySelector('.el-overlay-dialog[aria-label="Call confirmation"]');
+            if (!dialog) return;
 
-        observer.observe(document.body, { childList: true, subtree: true });
+            const confirmButton = dialog.querySelector('.el-button.el-button--success.mt-4');
+            if (!confirmButton) return;
+            if (confirmButton.disabled || confirmButton.getAttribute('aria-disabled') === 'true') return;
 
-        const waitForDialog = setInterval(() => {
-            if (clickIfReady()) cleanup();
-        }, 100);
+            clicked = true;
+            confirmButton.click();
+            stop();
+        }, pollMs);
 
         const timeoutId = setTimeout(() => {
-            cleanup();
-        }, 20000);
+            stop();
+        }, maxWaitMs);
     },
     clickCallAndConfirm: () => {
         const callButton = document.querySelector('.table-row__image.call-img');
