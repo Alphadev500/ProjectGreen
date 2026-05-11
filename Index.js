@@ -217,13 +217,11 @@ const Green = {
                 Green.setTimeout(() => {
 
                     try {
+                        document.querySelector('.el-button.el-button--danger').click();
+                        console.log('up');
                         Green.setTimeout(() => {
-                             document.querySelector('.el-button.el-button--danger').click();
-                             console.log('up');
-                             Green.setTimeout(() => {
-                                 document.querySelector('.el-button.el-button--success.mt-4').click();
-                             }, 1000, 1500);
-                         }, 1000, 1500);
+                            document.querySelector('.el-button.el-button--success.mt-4').click();
+                        }, 1000, 1500);
                     } catch (e) {
                         document.querySelector('.el-button.el-button--success.mt-4').click();
                     }
