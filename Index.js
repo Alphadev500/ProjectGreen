@@ -215,9 +215,11 @@ const Green = {
         let intervalID = setInterval(() => {
             Green.playerName(() => {
                 Green.setTimeout(() => {
-                    let talk = document.querySelectorAll('.table-content')[2].querySelectorAll('div')[21].querySelector('span').innerText;
-
+                    let talk = document.querySelectorAll('.table-content')[2].
+                    querySelectorAll('div')[21].querySelector('span').innerText;
+                    console.log(talk);
                     if (talk == 'Yes') {
+                        console.log('click');
                         document.querySelector('.el-button.el-button--danger').click();
                         Green.setTimeout(() => {
                             document.querySelector('.el-button.el-button--success.mt-4').click();
