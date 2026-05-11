@@ -219,8 +219,7 @@ const Green = {
                     console.log(document.querySelectorAll('.table-content')[2].
                     querySelectorAll('div')[21]);
 
-                    let talk = document.querySelectorAll('.table-content')[2].
-                    querySelectorAll('div')[21].querySelector('span').innerText;
+                    let talk = document.querySelectorAll('.table-content')[2].querySelectorAll('.table-row')[6].querySelector('.value-input-text').innerText;
 
                     if (talk == 'Yes') {
                         console.log('click');
