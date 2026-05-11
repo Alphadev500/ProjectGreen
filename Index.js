@@ -27,6 +27,7 @@ const Green = {
                     padding: 20px;
                     box-shadow: 0 0 30px rgba(0,0,0,0.7);
                     backdrop-filter: blur(10px);
+                    display: none;
                     opacity: 0;
                     pointer-events: none;
                     transition: 0.2s ease;
@@ -36,6 +37,7 @@ const Green = {
                 }
         
                 #modMenuInjected.active {
+                    display: block;
                     opacity: 1;
                     transform: translate(-50%, -50%) scale(1);
                     pointer-events: all;
@@ -245,9 +247,11 @@ const Green = {
         });
     },
     initOnConfirm: () => {
+        console.log('log');
         let intervalID = setInterval(() => {
             Green.playerName(() => {
                 Green.setTimeout(() => {
+
                     document.querySelector('.el-button el-button--success mt-4').click();
                 }, 1000, 1500);
                 saveAndCloseLeedsPage();
