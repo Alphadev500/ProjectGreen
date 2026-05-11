@@ -214,6 +214,7 @@ const Green = {
     initOnConfirm: () => {
         let intervalID = setInterval(() => {
             Green.playerName(() => {
+                console.log('talk');
                 Green.setTimeout(() => {
                     let talk = document.querySelectorAll('.table-content')[2].
                     querySelectorAll('div')[21].querySelector('span').innerText;
