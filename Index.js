@@ -169,42 +169,7 @@ const Green = {
             }
         });
     },
-    autoConfirmCallDialog: () => {
-        if (Green.callConfirmWatcherActive) return;
-        Green.callConfirmWatcherActive = true;
-
-        let clicked = false;
-        const pollMs = 100;
-        const maxWaitMs = 20000;
-
-        const stop = () => {
-            Green.callConfirmWatcherActive = false;
-            clearInterval(intervalId);
-            clearTimeout(timeoutId);
-        };
-
-        const intervalId = setInterval(() => {
-            if (clicked) return;
-
-            const dialog = document.querySelector('.el-overlay-dialog[aria-label="Call confirmation"]');
-            if (!dialog) return;
-
-            // Try inside the matched dialog first, then a strict fallback by class.
-            const confirmButton =
-                dialog.querySelector('.el-button.el-button--success.mt-4') ||
-                document.querySelector('.el-overlay-dialog[aria-label="Call confirmation"] .el-button.el-button--success.mt-4');
-            if (!confirmButton) return;
-            if (confirmButton.disabled || confirmButton.getAttribute('aria-disabled') === 'true') return;
-
-            clicked = true;
-            confirmButton.click();
-            stop();
-        }, pollMs);
-
-        const timeoutId = setTimeout(() => {
-            stop();
-        }, maxWaitMs);
-    },
+    autoConfirmCallDialog: () => {},
     clickCallAndConfirm: () => {
         const callButton = document.querySelector('.table-row__image.call-img');
         if (!callButton) return;
@@ -252,12 +217,12 @@ const Green = {
                 Green.setTimeout(() => {
 
                     try {
-                        // Green.setTimeout(() => {
-                        //     document.querySelector('.el-button.el-button--danger').click();
-                        //     Green.setTimeout(() => {
-                        //         document.querySelector('.el-button.el-button--success.mt-4').click();
-                        //     }, 1000, 1500);
-                        // }, 1000, 1500);
+                        Green.setTimeout(() => {
+                             document.querySelector('.el-button.el-button--danger').click();
+                             Green.setTimeout(() => {
+                                 document.querySelector('.el-button.el-button--success.mt-4').click();
+                             }, 1000, 1500);
+                         }, 1000, 1500);
                     } catch (e) {
                         document.querySelector('.el-button.el-button--success.mt-4').click();
                     }
