@@ -213,6 +213,7 @@ const Green = {
     },
     initOnConfirm: () => {
         let intervalID = setInterval(() => {
+            console.log('talk-------------------------');
             Green.playerName(() => {
                 console.log('talk');
                 Green.setTimeout(() => {
