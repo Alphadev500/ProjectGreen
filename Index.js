@@ -1,5 +1,5 @@
 const Green = {
-    autoSendEmailTempName: "new",
+    autoSendEmailTempName: localStorage.getItem("autoEmailTempName") || "new",
     sendEmail: true,
     userFTD: false,
     callCanselIntervals: [35],
@@ -157,6 +157,7 @@ const Green = {
         Green.setTimeout(() => {
             if (callback) {
                 // This is the call Icon on the man page of the lead
+                console.log('loaded');
                 document.querySelector('.table-row__image.call-img').addEventListener("click", callback);
             }
         });
