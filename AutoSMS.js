@@ -161,13 +161,12 @@
     // ========================================================================
     async function fetchFiltersAndPopulate() {
         const token = getAuthToken();
-        console.log(token);
         if (!token) return;
 
         try {
             // Make a dummy request to get the metadata (managers, categories)
             const response = await fetch(crmConfig.apiBaseUrl, {
-                method: 'POST',
+                method: 'GET',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ page: 1, limit: 1 })
             });
