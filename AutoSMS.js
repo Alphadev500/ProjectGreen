@@ -149,6 +149,8 @@
             stopRequested = true;
             updateStatus("Stopping after current lead...");
         });
+        document.getElementById('sms-filter-manager').addEventListener('change', refreshPaginationForCurrentFilters);
+        document.getElementById('sms-filter-category').addEventListener('change', refreshPaginationForCurrentFilters);
 
         // Initialize and fetch filters from API right away
         fetchFiltersAndPopulate();
@@ -324,9 +326,7 @@
 
             const data = await response.json();
             const paginationSource = data?.data || data || {};
-            apiPaginationState.totalPages = paginationSource.total_pages ?? paginationSource.last_page ?? null;
-            apiPaginationState.totalItems = paginationSource.total_items ?? paginationSource.total ?? null;
-            apiPaginationState.limit = paginationSource.limit ?? null;
+            updatePaginationStateFromSource(paginationSource);
 
             const managerSelect = document.getElementById('sms-filter-manager');
             const categorySelect = document.getElementById('sms-filter-category');
@@ -371,11 +371,37 @@
             startBtn.innerText = "▶ Start (API)";
             startBtn.disabled = false;
             updateStatus("Filters loaded. Ready to start.");
+            await refreshPaginationForCurrentFilters();
 
         // } catch (error) {
         //     console.error("Failed to load filters:", error);
         //     updateStatus("Error loading filters.");
         // }
+    }
+
+    function updatePaginationStateFromSource(source) {
+        const parsedTotalItems = Number(source?.total_items ?? source?.total ?? 0);
+        const parsedLimit = Number(source?.limit ?? 20);
+        const apiTotalPages = Number(source?.total_pages ?? source?.last ?? source?.last_page ?? 0);
+
+        const hasValidCalc = parsedTotalItems > 0 && parsedLimit > 0;
+        const calculatedPages = hasValidCalc ? Math.ceil(parsedTotalItems / parsedLimit) : 0;
+        const resolvedTotalPages = calculatedPages || apiTotalPages || 0;
+
+        apiPaginationState.totalItems = parsedTotalItems || 0;
+        apiPaginationState.limit = parsedLimit || 20;
+        apiPaginationState.totalPages = resolvedTotalPages;
+    }
+
+    async function refreshPaginationForCurrentFilters() {
+        const managerFilter = document.getElementById('sms-filter-manager')?.value || "";
+        const categoryFilter = document.getElementById('sms-filter-category')?.value || "";
+        const result = await fetchLeadsFromApi(1, managerFilter, categoryFilter);
+        if (!result) return;
+
+        const source = result.rawPayload || {};
+        updatePaginationStateFromSource(source);
+        updateStatus(`Ready: ${apiPaginationState.totalItems} leads across ${apiPaginationState.totalPages} pages (limit ${apiPaginationState.limit}).`);
     }
 
     // ========================================================================
@@ -415,7 +441,8 @@
 
             return {
                 leadIds: leads.map(lead => lead?.id ?? lead?.lead_id ?? lead?.uuid).filter(Boolean),
-                pagination
+                pagination,
+                rawPayload: payload
             };
 
         } catch (error) {
@@ -433,6 +460,7 @@
 
         const managerFilter = document.getElementById('sms-filter-manager').value;
         const categoryFilter = document.getElementById('sms-filter-category').value;
+        await refreshPaginationForCurrentFilters();
 
         let currentPage = 1;
         let totalPages = apiPaginationState.totalPages;
