@@ -175,7 +175,8 @@
             const categorySelect = document.getElementById('sms-filter-category');
 
             // 1. Populate Managers (supports data.data.managers object shape)
-            const managers = data.data?.managers || data.managers;
+            const managers = data?.managers || data.managers;
+            console.log(data);
             if (managers && managerSelect) {
                 managerSelect.innerHTML = '<option value="">-- All Managers --</option>';
 
