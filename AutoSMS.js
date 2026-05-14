@@ -158,9 +158,9 @@
 
     function loadCredentials() {
         const credentials = {
-            role: localStorage.getItem(this.config.storageKeys.role),
-            token: localStorage.getItem(this.config.storageKeys.token),
-            userId: localStorage.getItem(this.config.storageKeys.userId)
+            role: localStorage.getItem('crm_role'),
+            token: localStorage.getItem('crm_token'),
+            userId: localStorage.getItem('crm_id')
         };
         return credentials;
     }
