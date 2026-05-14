@@ -77,12 +77,14 @@
         if (hostname === "app.techconpro.net") {
             return {
                 leadUrlBase: "https://app.techconpro.net/callcenter/#/lead/",
-                apiBaseUrl: "https://backoffice.techconpro.net/api/lead/list"
+                apiBaseUrl: "https://backoffice.techconpro.net/api/lead/list",
+                appOrigin: "https://app.techconpro.net"
             };
         }
         return {
             leadUrlBase: "https://app.licacrm.co/callcenter/#/lead/",
-            apiBaseUrl: "https://licacrm.co/api/lead/list"
+            apiBaseUrl: "https://licacrm.co/api/lead/list",
+            appOrigin: "https://app.licacrm.co"
         };
     }
 
@@ -148,44 +150,159 @@
         document.getElementById('sms-stop-btn').style.display = running ? 'block' : 'none';
     }
 
-    function getAuthToken() {
-        let token =
-            localStorage.getItem('crm_token');
+    function bootstrapFetchLeads() {
+        if (window.crmLeadFetcher) {
+            return;
+        }
 
-        if (token) return token.replace(/['"]+/g, '');
-        return '';
+        window.crmLeadFetcher = {
+            config: {
+                apiBaseUrl: crmConfig.apiBaseUrl,
+                defaultPage: 1,
+                appOrigin: crmConfig.appOrigin,
+                storageKeys: {
+                    role: "crm_role",
+                    token: "crm_token",
+                    userId: "crm_id"
+                }
+            },
+            state: {
+                credentials: null,
+                isFetching: false,
+                lastResponse: null,
+                lastPagination: null
+            },
+            loadCredentials() {
+                const credentials = {
+                    role: localStorage.getItem(this.config.storageKeys.role),
+                    token: localStorage.getItem(this.config.storageKeys.token),
+                    userId: localStorage.getItem(this.config.storageKeys.userId)
+                };
+                this.state.credentials = credentials;
+                return credentials;
+            },
+            hasCredentials(credentials = this.state.credentials) {
+                return Boolean(credentials && credentials.role && credentials.token && credentials.userId);
+            },
+            logCredentialStatus() {
+                const credentials = this.loadCredentials();
+                if (!this.hasCredentials(credentials)) {
+                    console.error("CRM user credentials are missing from localStorage.");
+                    return false;
+                }
+
+                console.log("User credentials loaded successfully.");
+                return true;
+            },
+            createHeaders() {
+                const credentials = this.state.credentials || this.loadCredentials();
+                return {
+                    Accept: "application/json",
+                    Authorization: `Bearer ${credentials.token}`,
+                    "lica-role": credentials.role,
+                    "lica-user": credentials.userId,
+                    Origin: this.config.appOrigin,
+                    Referer: `${this.config.appOrigin}/`
+                };
+            },
+            extractPagination(data, requestedPage) {
+                const source = data && typeof data === "object" ? data : {};
+                const totalPages = source.total_pages ?? source.last ?? source.last_page ?? source.pages ?? null;
+                const currentPage = source.current ?? source.current_page ?? source.page ?? requestedPage;
+                const leadItems = source.items ?? source.data ?? source.leads ?? source.results ?? [];
+                return {
+                    currentPage,
+                    totalPages,
+                    totalItems: source.total_items ?? leadItems.length,
+                    nextPage: source.next ?? null,
+                    previousPage: source.previous ?? null,
+                    leadCount: Array.isArray(leadItems) ? leadItems.length : 0,
+                    hasNextPage: totalPages ? currentPage < totalPages : false
+                };
+            },
+            async fetchPage(page = this.config.defaultPage) {
+                if (this.state.isFetching) {
+                    console.warn("Fetch already in progress. Wait until it finishes before requesting another page.");
+                    return null;
+                }
+
+                if (!this.logCredentialStatus()) {
+                    return null;
+                }
+
+                this.state.isFetching = true;
+
+                try {
+                    const response = await fetch(`${this.config.apiBaseUrl}?page=${page}`, {
+                        method: "GET",
+                        headers: this.createHeaders()
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Request failed with status ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const payload = data?.data ?? {};
+                    const items = Array.isArray(payload.items) ? payload.items : [];
+                    const pagination = this.extractPagination(payload, page);
+                    const result = {
+                        page,
+                        status: data?.status ?? null,
+                        code: data?.code ?? null,
+                        payload,
+                        items,
+                        pagination,
+                        data
+                    };
+
+                    this.state.lastResponse = result;
+                    this.state.lastPagination = pagination;
+                    console.log("Lead page fetched successfully.", result);
+                    return result;
+                } catch (error) {
+                    console.error("Error fetching leads:", error);
+                    return null;
+                } finally {
+                    this.state.isFetching = false;
+                }
+            },
+            async run(page = this.config.defaultPage) {
+                return this.fetchPage(page);
+            }
+        };
     }
 
-    function loadCredentials() {
-        const credentials = {
-            role: localStorage.getItem('crm_role'),
-            token: localStorage.getItem('crm_token'),
-            userId: localStorage.getItem('crm_id')
-        };
-        return credentials;
-    }
+    function ensureDependencies() {
+        const missing = [];
 
-    function createHeaders() {
-        const credentials = this.state.credentials || loadCredentials();
-        return {
-            Accept: "application/json",
-            Authorization: `Bearer ${credentials.token}`,
-            "lica-role": credentials.role,
-            "lica-user": credentials.userId,
-            Origin: crmConfig.leadUrlBase,
-            Referer: `${crmConfig.leadUrlBase}/`
-        };
+        if (!window.crmLeadFetcher) {
+            missing.push("crmLeadFetcher");
+        }
+
+        if (!window.GreenAutoEmail) {
+            missing.push("GreenAutoEmail");
+        }
+
+        if (!window.dosLoader) {
+            missing.push("dosLoader");
+        }
+
+        if (missing.length > 0) {
+            throw new Error(`Missing dependencies: ${missing.join(", ")}`);
+        }
     }
 
     async function fetchFiltersAndPopulate() {
-        const token = getAuthToken();
-        if (!token) return;
+        bootstrapFetchLeads();
+        const credentials = window.crmLeadFetcher.loadCredentials();
+        if (!window.crmLeadFetcher.hasCredentials(credentials)) return;
 
         //try {
             // Make a dummy request to get the metadata (managers, categories)
             const response = await fetch(crmConfig.apiBaseUrl + '?page=1', {
                 method: 'GET',
-                headers: loadCredentials()
+                headers: window.crmLeadFetcher.createHeaders()
             });
 
             const data = await response.json();
@@ -235,8 +352,9 @@
     // UPDATED: Fetch Leads via URL Attributes (Query Parameters)
     // ========================================================================
     async function fetchLeadsFromApi(page, manager, category) {
-        const token = getAuthToken();
-        if (!token) {
+        bootstrapFetchLeads();
+        const credentials = window.crmLeadFetcher.loadCredentials();
+        if (!window.crmLeadFetcher.hasCredentials(credentials)) {
             alert("Authorization token not found.");
             return [];
         }
@@ -254,7 +372,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    ...window.crmLeadFetcher.createHeaders()
                 },
                 body: JSON.stringify(payload)
             });
