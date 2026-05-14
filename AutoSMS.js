@@ -156,9 +156,27 @@
         return '';
     }
 
-    // ========================================================================
-    // NEW: Auto-Fetch Managers and Categories from API
-    // ========================================================================
+    function loadCredentials() {
+        const credentials = {
+            role: localStorage.getItem(this.config.storageKeys.role),
+            token: localStorage.getItem(this.config.storageKeys.token),
+            userId: localStorage.getItem(this.config.storageKeys.userId)
+        };
+        return credentials;
+    }
+
+    function createHeaders() {
+        const credentials = this.state.credentials || loadCredentials();
+        return {
+            Accept: "application/json",
+            Authorization: `Bearer ${credentials.token}`,
+            "lica-role": credentials.role,
+            "lica-user": credentials.userId,
+            Origin: crmConfig.leadUrlBase,
+            Referer: `${crmConfig.leadUrlBase}/`
+        };
+    }
+
     async function fetchFiltersAndPopulate() {
         const token = getAuthToken();
         if (!token) return;
@@ -167,7 +185,7 @@
             // Make a dummy request to get the metadata (managers, categories)
             const response = await fetch(crmConfig.apiBaseUrl + '?page=1', {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+                headers: loadCredentials()
             });
 
             const data = await response.json();
