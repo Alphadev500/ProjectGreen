@@ -465,6 +465,7 @@
         let currentPage = 1;
         let totalPages = apiPaginationState.totalPages;
         let totalProcessed = 0;
+        let totalAttempted = 0;
         let hasMoreLeads = true;
 
         while (hasMoreLeads && !stopRequested) {
@@ -504,7 +505,8 @@
                 const leadId = leadIds[i];
                 const leadUrl = `${crmConfig.leadUrlBase}${leadId}`;
 
-                updateStatus(`Sending SMS ${totalProcessed + 1}/${apiPaginationState.totalItems || 0} (page ${currentPage}${totalPages ? `/${totalPages}` : ''})...`, totalProcessed);
+                totalAttempted++;
+                updateStatus(`Sending SMS ${totalAttempted}/${apiPaginationState.totalItems || 0} (page ${currentPage}${totalPages ? `/${totalPages}` : ''})...`, totalProcessed);
 
                 try {
                     const success = await processLeadInIframe(leadUrl, leadId);
@@ -522,7 +524,10 @@
             }
         }
 
-        updateStatus(stopRequested ? "Stopped by user." : "Processing finished.", totalProcessed);
+        const finishText = stopRequested
+            ? `Stopped by user. Sent ${totalProcessed}/${totalAttempted} attempted.`
+            : `Processing finished. Sent ${totalProcessed}/${totalAttempted} attempted.`;
+        updateStatus(finishText, totalProcessed);
         isRunning = false;
         toggleButtons(false);
     }
