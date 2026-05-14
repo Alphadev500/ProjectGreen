@@ -234,7 +234,7 @@
                     nextPage: source.next ?? null,
                     previousPage: source.previous ?? null,
                     leadCount: Array.isArray(leadItems) ? leadItems.length : 0,
-                    hasNextPage: totalPages ? currentPage < totalPages : false
+                    hasNextPage: totalPages ? Number(currentPage) < Number(totalPages) : null
                 };
             },
             async fetchPage(page = this.config.defaultPage) {
@@ -351,16 +351,17 @@
 
                 if (Array.isArray(categories)) {
                     categories.forEach(c => {
-                        const rawValue = c?.id ?? c;
+                        const rawValue = c?.value ?? c?.id ?? c;
                         const key = String(c?.name ?? c?.title ?? rawValue ?? "");
                         const label = CATEGORY_LABELS[key] || c?.name || c?.title || String(rawValue);
                         categorySelect.add(new Option(label, rawValue));
                     });
                 } else if (typeof categories === 'object') {
                     Object.entries(categories).forEach(([id, val]) => {
+                        const categoryValue = val?.value ?? val?.id ?? id;
                         const key = String(val?.name ?? val?.title ?? val ?? id);
                         const label = CATEGORY_LABELS[key] || val?.name || val?.title || String(val);
-                        categorySelect.add(new Option(label, id));
+                        categorySelect.add(new Option(label, String(categoryValue)));
                     });
                 }
             }
@@ -390,8 +391,10 @@
 
         const url = new URL(crmConfig.apiBaseUrl);
         url.searchParams.set("page", String(page));
-        if (manager) url.searchParams.set("assign", String(manager));
-        if (category) url.searchParams.set("lead_category", String(category));
+        const managerValue = String(manager || "").trim();
+        const categoryValue = String(category || "").trim();
+        if (managerValue) url.searchParams.set("assign", managerValue);
+        if (categoryValue) url.searchParams.set("lead_category", categoryValue);
 
         try {
             const response = await fetch(url.toString(), {
@@ -453,6 +456,12 @@
             }
 
             if (!leadIds || leadIds.length === 0) {
+                const canTryNextPage = totalPages ? Number(currentPage) < Number(totalPages) : false;
+                if (canTryNextPage) {
+                    updateStatus(`No leads on page ${currentPage}. Moving to next page...`, totalProcessed);
+                    currentPage++;
+                    continue;
+                }
                 updateStatus("No more leads found.");
                 hasMoreLeads = false;
                 break;
@@ -477,9 +486,8 @@
                 }
             }
 
-            const reachedEndByTotalPages = totalPages ? currentPage >= totalPages : false;
-            const hasNextPageFlag = pageResult.pagination?.hasNextPage;
-            if (reachedEndByTotalPages || hasNextPageFlag === false) {
+            const reachedEndByTotalPages = totalPages ? Number(currentPage) >= Number(totalPages) : false;
+            if (reachedEndByTotalPages) {
                 hasMoreLeads = false;
             } else {
                 currentPage++;
