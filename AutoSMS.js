@@ -165,10 +165,9 @@
 
         //try {
             // Make a dummy request to get the metadata (managers, categories)
-            const response = await fetch(crmConfig.apiBaseUrl, {
+            const response = await fetch(crmConfig.apiBaseUrl + '?page=1', {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ page: 1, limit: 1 })
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
             });
 
             const data = await response.json();
