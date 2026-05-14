@@ -2,7 +2,7 @@
 // @name         CRM Call Automation
 // @namespace    http://tampermonkey.net/
 // @version      0.6.2
-// @description  Оптимізована швидкість натискання кнопок та реакції на події.
+// @description
 // @author       Programming Assistant
 // @match        *://*/*
 // @grant        none
@@ -19,10 +19,9 @@
         page: false,
         callConfirmWatcherActive: false,
 
-        // Функція для випадкових чисел (трохи зменшимо діапазон для швидкості)
+
         getRandomNumber : (from, to) => Math.random() * (to - from) + from,
 
-        // Оптимізований таймер: тепер за замовчуванням він швидший (200-500мс)
         setTimeout: (callback, from = 200, to = 500) => {
             setTimeout(callback, Green.getRandomNumber(from, to));
         },
@@ -52,13 +51,12 @@
             if (Green.callConfirmWatcherActive) return;
             Green.callConfirmWatcherActive = true;
 
-            // Зменшили інтервал перевірки з 500мс до 100мс для миттєвої реакції
             let intervalID = setInterval(() => {
                 try {
                     let callImg = document.querySelector('.table-row__image.call-img');
                     if (callImg) {
                         callImg.click();
-                        // Зменшено затримку між кліками
+
                         Green.setTimeout(() => {
                             let dangerBtn = document.querySelector('.el-button.el-button--danger');
                             if (dangerBtn) dangerBtn.click();
@@ -66,7 +64,7 @@
                             Green.setTimeout(() => {
                                 let successBtn = document.querySelector('.el-button.el-button--success.mt-4');
                                 if (successBtn) successBtn.click();
-                            }, 300, 600); // Швидке підтвердження
+                            }, 300, 600);
                         }, 300, 600);
 
                         clearInterval(intervalID);
@@ -84,7 +82,6 @@
         }
     };
 
-    // ДЕТЕКТОР СТОРІНОК (Швидкість х5)
     function DetectPage() {
         let intervalID = setInterval(() => {
             let app = document.querySelector('#app');
@@ -101,7 +98,7 @@
                     callTab();
                 }
             }
-        }, 100); // Перевірка кожні 100мс замість 500мс
+        }, 100);
     }
 
     function getUserId() {
@@ -158,7 +155,7 @@
                 hengUp();
             }
         });
-        // Перевірка стану кожні 500мс для стабільності
+
         setInterval(callCanselDetect, 500);
         setInterval(answer, 500);
     }
