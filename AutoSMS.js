@@ -91,6 +91,21 @@
     const crmConfig = resolveCrmConfig();
     let isRunning = false;
     let stopRequested = false;
+    const apiPaginationState = {
+        totalPages: null,
+        totalItems: null,
+        limit: null
+    };
+    const CATEGORY_LABELS = {
+        becomeacquainted: "Become Acquainted",
+        "t.property.category.acquaintance": "Acquaintance",
+        "t.property.category.luxuriousacquaintance": "Luxurious Acquaintance",
+        "t.property.category.acquaintancecalledback": "Acquaintance Calledback",
+        "t.property.category.failedacquaintance": "Failed Aacquaintance",
+        "t.property.category.playedlastweek": "Played Last Week",
+        "t.property.category.playedthisweek": "Played This Week",
+        "t.property.category.retention": "Retention"
+    };
 
     // Create Widget on the screen
     function createWidget() {
@@ -306,6 +321,10 @@
             });
 
             const data = await response.json();
+            const paginationSource = data?.data || data || {};
+            apiPaginationState.totalPages = paginationSource.total_pages ?? paginationSource.last_page ?? null;
+            apiPaginationState.totalItems = paginationSource.total_items ?? paginationSource.total ?? null;
+            apiPaginationState.limit = paginationSource.limit ?? null;
 
             const managerSelect = document.getElementById('sms-filter-manager');
             const categorySelect = document.getElementById('sms-filter-category');
@@ -329,9 +348,18 @@
                 categorySelect.innerHTML = '<option value="">-- All Categories --</option>';
 
                 if (Array.isArray(categories)) {
-                    categories.forEach(c => categorySelect.add(new Option(c.name || c.title || c.id || c, c.id || c)));
+                    categories.forEach(c => {
+                        const rawValue = c?.id ?? c;
+                        const key = String(c?.name ?? c?.title ?? rawValue ?? "");
+                        const label = CATEGORY_LABELS[key] || c?.name || c?.title || String(rawValue);
+                        categorySelect.add(new Option(label, rawValue));
+                    });
                 } else if (typeof categories === 'object') {
-                    Object.entries(categories).forEach(([id, val]) => categorySelect.add(new Option(val.name || val, id)));
+                    Object.entries(categories).forEach(([id, val]) => {
+                        const key = String(val?.name ?? val?.title ?? val ?? id);
+                        const label = CATEGORY_LABELS[key] || val?.name || val?.title || String(val);
+                        categorySelect.add(new Option(label, id));
+                    });
                 }
             }
 
@@ -355,34 +383,39 @@
         const credentials = window.crmLeadFetcher.loadCredentials();
         if (!window.crmLeadFetcher.hasCredentials(credentials)) {
             alert("Authorization token not found.");
-            return [];
+            return null;
         }
 
-        // Add Manager and Category to the URL as query parameters
-        let url = new URL(crmConfig.apiBaseUrl);
-        if (manager) url.searchParams.append('assigned_to', manager);
-        if (category) url.searchParams.append('category', category);
-
-        // Keep only pagination in the body payload
-        const payload = { page: page, limit: 100 };
+        const url = new URL(crmConfig.apiBaseUrl);
+        url.searchParams.set("page", String(page));
+        if (manager) url.searchParams.set("assign", String(manager));
+        if (category) url.searchParams.set("lead_category", String(category));
 
         try {
-            const response = await fetch(url.toString(), { // Convert URL object to string
-                method: 'POST',
+            const response = await fetch(url.toString(), {
+                method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
                     ...window.crmLeadFetcher.createHeaders()
-                },
-                body: JSON.stringify(payload)
+                }
             });
 
+            if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+            }
+
             const data = await response.json();
-            const leads = data.data?.items || data.data || data.items || [];
-            return leads.map(lead => lead.id);
+            const payload = data?.data || {};
+            const leads = Array.isArray(payload.items) ? payload.items : (Array.isArray(data?.items) ? data.items : []);
+            const pagination = window.crmLeadFetcher.extractPagination(payload, page);
+
+            return {
+                leadIds: leads.map(lead => lead.id).filter(Boolean),
+                pagination
+            };
 
         } catch (error) {
             console.error("API request error:", error);
-            return [];
+            return null;
         }
     }
 
@@ -397,14 +430,25 @@
         const categoryFilter = document.getElementById('sms-filter-category').value;
 
         let currentPage = 1;
+        let totalPages = apiPaginationState.totalPages;
         let totalProcessed = 0;
         let hasMoreLeads = true;
 
         while (hasMoreLeads && !stopRequested) {
-            updateStatus(`Loading API (Page ${currentPage})...`);
+            updateStatus(`Loading API (Page ${currentPage}${totalPages ? `/${totalPages}` : ''})...`);
 
             // Fetch array of lead IDs with URL filters
-            const leadIds = await fetchLeadsFromApi(currentPage, managerFilter, categoryFilter);
+            const pageResult = await fetchLeadsFromApi(currentPage, managerFilter, categoryFilter);
+
+            if (!pageResult) {
+                updateStatus("Failed to load leads from API.");
+                break;
+            }
+
+            const leadIds = pageResult.leadIds;
+            if (pageResult.pagination?.totalPages) {
+                totalPages = pageResult.pagination.totalPages;
+            }
 
             if (!leadIds || leadIds.length === 0) {
                 updateStatus("No more leads found.");
@@ -431,7 +475,13 @@
                 }
             }
 
-            currentPage++; // Move to next API page
+            const reachedEndByTotalPages = totalPages ? currentPage >= totalPages : false;
+            const hasNextPageFlag = pageResult.pagination?.hasNextPage;
+            if (reachedEndByTotalPages || hasNextPageFlag === false) {
+                hasMoreLeads = false;
+            } else {
+                currentPage++;
+            }
         }
 
         updateStatus(stopRequested ? "Stopped by user." : "Processing finished.", totalProcessed);
