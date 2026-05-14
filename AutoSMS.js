@@ -468,7 +468,7 @@
         let hasMoreLeads = true;
 
         while (hasMoreLeads && !stopRequested) {
-            updateStatus(`Loading API (Page ${currentPage}${totalPages ? `/${totalPages}` : ''})...`);
+            updateStatus(`Loading page ${currentPage}${totalPages ? `/${totalPages}` : ''} of ${apiPaginationState.totalItems || 0} filtered users...`, totalProcessed);
 
             // Fetch array of lead IDs with URL filters
             const pageResult = await fetchLeadsFromApi(currentPage, managerFilter, categoryFilter);
@@ -495,7 +495,7 @@
                 break;
             }
 
-            updateStatus(`Found ${leadIds.length} leads. Starting...`);
+            updateStatus(`Filtered users: ${apiPaginationState.totalItems || 0}. Processing page ${currentPage}${totalPages ? `/${totalPages}` : ''}...`, totalProcessed);
 
             // Process leads one by one in iframe
             for (let i = 0; i < leadIds.length; i++) {
@@ -504,7 +504,7 @@
                 const leadId = leadIds[i];
                 const leadUrl = `${crmConfig.leadUrlBase}${leadId}`;
 
-                updateStatus(`Sending SMS (${i + 1}/${leadIds.length}) on page ${currentPage}...`, totalProcessed);
+                updateStatus(`Sending SMS ${totalProcessed + 1}/${apiPaginationState.totalItems || 0} (page ${currentPage}${totalPages ? `/${totalPages}` : ''})...`, totalProcessed);
 
                 try {
                     const success = await processLeadInIframe(leadUrl, leadId);
