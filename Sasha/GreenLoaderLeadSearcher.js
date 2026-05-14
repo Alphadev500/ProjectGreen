@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         CRM Call Automation
+// @name         CRM Automation - BULLETPROOF TIMER V7.0
 // @namespace    http://tampermonkey.net/
-// @version      0.6.2
-// @description
+// @version      7.0
+// @description  Blablablagetthecode.
 // @author       Programming Assistant
 // @match        *://*/*
 // @grant        none
@@ -11,208 +11,162 @@
 (function() {
     'use strict';
 
-    const Green = {
-        autoSendEmailTempName: localStorage.getItem("autoEmailTempName") || "new",
-        userFTD: false,
-        callCanselIntervals: [35],
-        onCall: false,
-        page: false,
-        callConfirmWatcherActive: false,
+    const CRM = {
+        pageType: null,
+        currentCallSeconds: 0, // Save amount of the sec.
+        wasOnCall: false,
 
-
-        getRandomNumber : (from, to) => Math.random() * (to - from) + from,
-
-        setTimeout: (callback, from = 200, to = 500) => {
-            setTimeout(callback, Green.getRandomNumber(from, to));
+        init() {
+            this.detectPage();
+            this.initHotkeys();
         },
 
-        initHotkeys: () => {
-            document.addEventListener('keydown', function(e) {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        // 1. Realizw wht is the page
+        detectPage() {
+            const interval = setInterval(() => {
+                if (document.querySelector(".player-title")) {
+                    this.pageType = "LEAD";
+                    this.initLeadLogic();
+                    clearInterval(interval);
+                } else if (document.querySelector('.page-holder .wrapper .connect span') || document.querySelector('.block-btn-call') || document.querySelector('.timer')) {
+                    this.pageType = "CALL";
+                    this.initCallLogic();
+                    clearInterval(interval);
+                }
+            }, 500);
+        },
+
+        // 2. HOT KEY
+        initHotkeys() {
+            document.addEventListener('keydown', (e) => {
+                // If you write the comment - don't react
+                if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
 
                 if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    Green.initOnConfirm();
+                    if (this.pageType === "LEAD") this.startCallSequence();
                 }
 
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    if (Green.page === "Call") {
-                        hengUp();
-                    } else {
-                        localStorage.setItem("hengUp", "true");
-                        setTimeout(() => localStorage.removeItem("hengUp"), 50);
+                    e.stopImmediatePropagation();
+
+                    if (this.pageType === "LEAD") {
+                        // Send the sygnal to hangup in the call tab
+                        localStorage.setItem("cmd_request_hangup", Date.now().toString());
+                    } else if (this.pageType === "CALL") {
+                        this.clickHangUp();
                     }
+                }
+            }, true);
+        },
+
+        // ==========================================
+        // Logic of the leads' profile page
+        // ==========================================
+        initLeadLogic() {
+            window.addEventListener("storage", (e) => {
+                // Tag listens only one command - "Move to another lead"
+                if (e.key === "cmd_trigger_next") {
+                    setTimeout(() => {
+                        const nextBtn = document.querySelector('button.collapse-next');
+                        if (nextBtn) {
+                            nextBtn.click();
+                        }
+                    }, 300);
                 }
             });
         },
 
-        initOnConfirm: () => {
-            if (Green.callConfirmWatcherActive) return;
-            Green.callConfirmWatcherActive = true;
-
-            let intervalID = setInterval(() => {
-                try {
-                    let callImg = document.querySelector('.table-row__image.call-img');
-                    if (callImg) {
-                        callImg.click();
-
-                        Green.setTimeout(() => {
-                            let dangerBtn = document.querySelector('.el-button.el-button--danger');
-                            if (dangerBtn) dangerBtn.click();
-
-                            Green.setTimeout(() => {
-                                let successBtn = document.querySelector('.el-button.el-button--success.mt-4');
-                                if (successBtn) successBtn.click();
-                            }, 300, 600);
-                        }, 300, 600);
-
-                        clearInterval(intervalID);
-                        Green.callConfirmWatcherActive = false;
-                    }
-                } catch(e) { console.error("Помилка кліку:", e); }
-            }, 100);
+        startCallSequence() {
+            let callImg = document.querySelector('.table-row__image.call-img');
+            if (callImg) {
+                callImg.click();
+                setTimeout(() => {
+                    let dangerBtn = document.querySelector('.el-button.el-button--danger');
+                    if (dangerBtn) dangerBtn.click();
+                    setTimeout(() => {
+                        let successBtn = document.querySelector('.el-button.el-button--success.mt-4');
+                        if (successBtn) successBtn.click();
+                    }, 500);
+                }, 500);
+            }
         },
 
-        getRandomIntervalNumber: () => Green.callCanselIntervals[Math.floor(Math.random() * Green.callCanselIntervals.length)],
+        // ==========================================
+        // Logic of the call tab
+        // ==========================================
+        initCallLogic() {
+            window.addEventListener("storage", (e) => {
+                if (e.key === "cmd_request_hangup") {
+                    this.clickHangUp();
+                }
+            });
 
-        init: () => {
-            Green.initHotkeys();
-            DetectPage();
+            setInterval(() => this.monitorCall(), 1000);
+            setInterval(() => this.autoAnswer(), 1000);
+        },
+
+        autoAnswer() {
+            const block = document.querySelector('.block-btn-call');
+            if (block) {
+                const successBtn = block.querySelector('.el-button.el-button--success');
+                if (successBtn) successBtn.click();
+            }
+        },
+
+        clickHangUp() {
+            const btn = document.querySelector('.el-button.el-button--danger');
+            if (btn) btn.click();
+        },
+
+        monitorCall() {
+            const timerEl = document.querySelector('.timer');
+
+            // if there's a timer on the screen
+            if (timerEl && timerEl.innerText.includes(":")) {
+                this.wasOnCall = true;
+                const parts = timerEl.innerText.split(":");
+
+                if (parts.length === 3) {
+                    // change the time in real sec
+                    this.currentCallSeconds = parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
+
+                    // Hangup the phone on the 35th sec if the lead didn't pick up
+                    if (!this.isPickedUp() && this.currentCallSeconds === 35) {
+                        this.clickHangUp();
+                    }
+
+                    // Install FTD after 120 sec
+                    if (this.currentCallSeconds >= 120) {
+                        localStorage.setItem('userFTD', 'true');
+                    }
+                }
+            }
+            // If the timer disappear (doesn't matter who hangs up)
+            else if (this.wasOnCall) {
+                this.wasOnCall = false;
+
+                // Main check: is the call was short?
+                if (this.currentCallSeconds > 0 && this.currentCallSeconds < 60) {
+                    // Only if the call was < 60 sec, send command to move to another lead
+                    localStorage.setItem("cmd_trigger_next", Date.now().toString());
+                } else if (this.currentCallSeconds >= 60) {
+                    // If teh call was more than 60 sec - DO NOTHING we stay at the same page to leave a comment
+                    console.log("Blocking transition: dialogue lasted more than 1 min.");
+                }
+
+                // Reset the counter for the next call
+                this.currentCallSeconds = 0;
+            }
+        },
+
+        isPickedUp() {
+            const status = document.querySelector('.status-call-start');
+            return status && status.innerText.includes("picked up");
         }
     };
 
-    function DetectPage() {
-        let intervalID = setInterval(() => {
-            let app = document.querySelector('#app');
-            if (app !== null) {
-                if (document.querySelector(".player-title") !== null) {
-                    Green.page = "Lead";
-                    clearInterval(intervalID);
-                    saveUserId();
-                    actOnChange();
-                }
-                else if (document.querySelector('.page-holder .wrapper .connect span') !== null) {
-                    Green.page = "Call";
-                    clearInterval(intervalID);
-                    callTab();
-                }
-            }
-        }, 100);
-    }
-
-    function getUserId() {
-        try {
-            return document.querySelector('.table-content').querySelectorAll('.table-row')[2].querySelector('.table-row__value').innerText.trim();
-        } catch(e) { return null; }
-    }
-
-    function saveUserId() {
-        let id = getUserId();
-        if (id) {
-            localStorage.setItem("user", JSON.stringify({ userId: id, status: "onCall" }));
-        }
-    }
-
-    function actOnChange() {
-        window.addEventListener("storage", function (event) {
-            if (event.key !== "user" || !event.newValue) return;
-
-            let currentUserID = getUserId();
-            let content;
-            try { content = JSON.parse(event.newValue); } catch(e) { return; }
-
-            if (content.status === "close" && content.userId === currentUserID) {
-                let skipNextLead = false;
-                const answeredTime = localStorage.getItem("leadAnsweredCallTime");
-                if (answeredTime) {
-                    const parts = answeredTime.split(":");
-                    if (parts.length === 3) {
-                        const mins = parseInt(parts[1], 10);
-                        if (!Number.isNaN(mins) && mins > 1) {
-                            skipNextLead = true;
-                        }
-                    }
-                }
-
-                localStorage.removeItem("user");
-                localStorage.removeItem("userFTD");
-                localStorage.removeItem("leadAnsweredCallTime");
-
-                if (!skipNextLead) {
-                    setTimeout(() => {
-                        let nextBtn = document.querySelector('button.collapse-next');
-                        if (nextBtn) nextBtn.click();
-                    }, 300);
-                }
-            }
-        });
-    }
-
-    function callTab() {
-        window.addEventListener("storage", function (event) {
-            if (event.key === "hengUp" && event.newValue === "true") {
-                hengUp();
-            }
-        });
-
-        setInterval(callCanselDetect, 500);
-        setInterval(answer, 500);
-    }
-
-    function answer() {
-        try {
-            let block = document.querySelector('.block-btn-call');
-            if (block) {
-                localStorage.removeItem("userFTD");
-                let successBtn = block.querySelector('.el-button.el-button--success');
-                if (successBtn) {
-                    successBtn.click();
-                    localStorage.setItem('OnCall', true);
-                }
-            }
-        } catch (e) {}
-    }
-
-    function hengUp() {
-        let btn = document.querySelector('.el-button.el-button--danger');
-        if (btn) btn.click();
-    }
-
-    function callCanselDetect() {
-        let timerEl = document.querySelector('.timer');
-        let timeOnHold = timerEl ? timerEl.innerText : "";
-        if (timeOnHold.trim().length > 0) Green.onCall = true;
-
-        if (localStorage.getItem("user") !== null && Green.onCall) {
-            if (userAnswered() && timeOnHold.trim().length > 0) {
-                localStorage.setItem("leadAnsweredCallTime", timeOnHold);
-            }
-
-            const parts = timeOnHold.split(":");
-            if (parts.length === 3) {
-                const mins = parseInt(parts[1], 10);
-                const secs = parseInt(parts[2], 10);
-                if (mins >= 2) localStorage.setItem('userFTD', true);
-                if (!userAnswered() && secs === Green.getRandomIntervalNumber()) hengUp();
-            }
-
-            if (timeOnHold === '' && Green.onCall === true) {
-                Green.onCall = false;
-                localStorage.removeItem("leadAnsweredCallTime");
-                let userStr = localStorage.getItem("user");
-                if (userStr) {
-                    let userData = JSON.parse(userStr);
-                    localStorage.setItem("user", JSON.stringify({ userId: userData.userId, status: "close" }));
-                }
-            }
-        }
-    }
-
-    function userAnswered() {
-        let el = document.querySelector('.status-call-start');
-        return el && el.innerText.includes("picked up");
-    }
-
-    Green.init();
+    // Запуск
+    CRM.init();
 })();
