@@ -159,6 +159,7 @@
     // ========================================================================
     async function fetchFiltersAndPopulate() {
         const token = getAuthToken();
+        console.log(token);
         if (!token) return;
 
         try {
