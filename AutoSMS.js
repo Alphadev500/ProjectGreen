@@ -98,6 +98,7 @@
     };
     const CATEGORY_LABELS = {
         becomeacquainted: "Become Acquainted",
+        "t.property.category.becomeacquainted": "Become Acquainted",
         "t.property.category.acquaintance": "Acquaintance",
         "t.property.category.luxuriousacquaintance": "Luxurious Acquaintance",
         "t.property.category.acquaintancecalledback": "Acquaintance Calledback",
@@ -188,10 +189,11 @@
                 lastPagination: null
             },
             loadCredentials() {
+                const clean = (value) => (typeof value === "string" ? value.replace(/['"]+/g, "").trim() : value);
                 const credentials = {
-                    role: localStorage.getItem(this.config.storageKeys.role),
-                    token: localStorage.getItem(this.config.storageKeys.token),
-                    userId: localStorage.getItem(this.config.storageKeys.userId)
+                    role: clean(localStorage.getItem(this.config.storageKeys.role)),
+                    token: clean(localStorage.getItem(this.config.storageKeys.token)),
+                    userId: clean(localStorage.getItem(this.config.storageKeys.userId))
                 };
                 this.state.credentials = credentials;
                 return credentials;
@@ -409,7 +411,7 @@
             const pagination = window.crmLeadFetcher.extractPagination(payload, page);
 
             return {
-                leadIds: leads.map(lead => lead.id).filter(Boolean),
+                leadIds: leads.map(lead => lead?.id ?? lead?.lead_id ?? lead?.uuid).filter(Boolean),
                 pagination
             };
 
