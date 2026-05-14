@@ -638,7 +638,7 @@
         }
 
         try {
-            const response = await fetch("https://your-domain/AutoEmailM/API/autoStatusSms.php", {
+            const response = await fetch("https://alphadev.space/AutoEmailM/API/autoStatusSms.php", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
