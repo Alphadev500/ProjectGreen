@@ -179,10 +179,10 @@
             if (managers && managerSelect) {
                 managerSelect.innerHTML = '<option value="">-- All Managers --</option>';
 
-
+                console.log(managers);
                 Object.entries(managers).forEach(([key, val]) => {
-                    const managerValue = val?.value || val?.manager_id || key;
-                    const managerName = val?.full_name || val?.fullName || `Manager ${managerValue}`;
+                    const managerValue = val?.value;
+                    const managerName = val?.full_name;
                     managerSelect.add(new Option(managerName, String(managerValue)));
                 });
             }
