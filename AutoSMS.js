@@ -570,11 +570,110 @@
         });
     }
 
+    function showNotAuthorizedMessage(message = "Not authorized") {
+        const existing = document.getElementById("green-auto-sms-auth-status");
+        if (existing) existing.remove();
+
+        const notice = document.createElement("div");
+        notice.id = "green-auto-sms-auth-status";
+        notice.style.position = "fixed";
+        notice.style.top = "20px";
+        notice.style.left = "50%";
+        notice.style.transform = "translateX(-50%)";
+        notice.style.padding = "10px 14px";
+        notice.style.background = "#c0392b";
+        notice.style.color = "#fff";
+        notice.style.borderRadius = "6px";
+        notice.style.zIndex = "999999";
+        notice.style.fontFamily = "Arial, sans-serif";
+        notice.style.fontSize = "14px";
+        notice.textContent = message;
+        document.body.appendChild(notice);
+    }
+
+    function extractAgentName() {
+        const header = document.querySelector(".header__ip");
+        if (!header) return null;
+
+        const lines = header.querySelectorAll("p");
+        for (const line of lines) {
+            const text = (line.textContent || "").trim();
+            if (!text.toLowerCase().includes("agent name")) continue;
+
+            const parts = text.split("⏤");
+            if (parts.length > 1) {
+                const name = parts.slice(1).join("⏤").trim();
+                if (name) return name;
+            }
+
+            const fallback = text.replace(/agent name\s*[:\-–—⏤]?\s*/i, "").trim();
+            if (fallback) return fallback;
+        }
+
+        return null;
+    }
+
+    function waitForAgentName(maxAttempts = 20, delayMs = 500) {
+        return new Promise((resolve) => {
+            let attempts = 0;
+
+            const tick = () => {
+                const name = extractAgentName();
+                if (name) return resolve(name);
+
+                attempts += 1;
+                if (attempts >= maxAttempts) return resolve(null);
+                setTimeout(tick, delayMs);
+            };
+
+            tick();
+        });
+    }
+
+    async function authorizeAutoSms() {
+        const agentName = await waitForAgentName();
+        if (!agentName) {
+            showNotAuthorizedMessage("Not authorized: Agent name not found");
+            return false;
+        }
+
+        try {
+            const response = await fetch("https://your-domain/AutoEmailM/API/autoStatusSms.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+                },
+                body: new URLSearchParams({
+                    username: agentName
+                }).toString()
+            });
+
+            const data = await response.json();
+            if (Number(data?.status) === 1) return true;
+
+            showNotAuthorizedMessage("Not authorized");
+            return false;
+        } catch (error) {
+            console.error("AutoSMS authorization request failed:", error);
+            showNotAuthorizedMessage("Not authorized");
+            return false;
+        }
+    }
+
+    async function initAutoSms() {
+        const isAuthorized = await authorizeAutoSms();
+        if (!isAuthorized) {
+            return;
+        }
+
+        createWidget();
+    }
+
     // Widget initialization
     if (document.readyState === "complete" || document.readyState === "interactive") {
-        createWidget();
+        initAutoSms();
     } else {
-        window.addEventListener('DOMContentLoaded', createWidget);
+        window.addEventListener('DOMContentLoaded', initAutoSms);
     }
 
 })();
