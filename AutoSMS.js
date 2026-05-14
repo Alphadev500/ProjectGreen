@@ -163,7 +163,7 @@
         const token = getAuthToken();
         if (!token) return;
 
-        try {
+        //try {
             // Make a dummy request to get the metadata (managers, categories)
             const response = await fetch(crmConfig.apiBaseUrl, {
                 method: 'GET',
@@ -208,10 +208,10 @@
             startBtn.disabled = false;
             updateStatus("Filters loaded. Ready to start.");
 
-        } catch (error) {
-            console.error("Failed to load filters:", error);
-            updateStatus("Error loading filters.");
-        }
+        // } catch (error) {
+        //     console.error("Failed to load filters:", error);
+        //     updateStatus("Error loading filters.");
+        // }
     }
 
     // ========================================================================
