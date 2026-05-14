@@ -149,7 +149,9 @@
     }
 
     function getAuthToken() {
-        let token = localStorage.getItem('token') || localStorage.getItem('auth_token') || localStorage.getItem('access_token');
+        let token =
+            localStorage.getItem('crm_token');
+
         if (token) return token.replace(/['"]+/g, '');
         return '';
     }
