@@ -22,6 +22,8 @@ function actOnChange () {
             removeUserId();
             if (localStorage.getItem('userFTD')) {
                 localStorage.removeItem('userFTD');
+            } else {
+                window.close();
             }
         }
     });
