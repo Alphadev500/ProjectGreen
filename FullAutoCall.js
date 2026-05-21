@@ -207,6 +207,56 @@ const Green = {
             callButton.click();
         });
     },
+    getCurrentLeadId: () => {
+        try {
+            return getUserId();
+        } catch (e) {
+            return null;
+        }
+    },
+    tryAutoCallNextLead: (signal) => {
+        let content = signal;
+
+        if (typeof content === 'string') {
+            try {
+                content = JSON.parse(content);
+            } catch (e) {
+                return false;
+            }
+        }
+
+        if (!content || !content.createdAt) return false;
+        if (Date.now() - content.createdAt > 30000) return false;
+
+        const currentLeadId = Green.getCurrentLeadId();
+        if (!currentLeadId || currentLeadId == content.closedUserId) return false;
+
+        const claim = JSON.parse(localStorage.getItem("autoCallNextLeadClaim") || "null");
+        if (claim && Date.now() - claim.createdAt < 30000) return false;
+
+        localStorage.setItem("autoCallNextLeadClaim", JSON.stringify({
+            userId: currentLeadId,
+            createdAt: Date.now()
+        }));
+
+        Green.ifElementExists('.table-row__image.call-img', (callButton) => {
+            const latestClaim = JSON.parse(localStorage.getItem("autoCallNextLeadClaim") || "null");
+            if (!latestClaim || latestClaim.userId != currentLeadId) return;
+
+            callButton.click();
+            localStorage.removeItem("autoCallNextLead");
+        });
+
+        return true;
+    },
+    bindAutoCallNextLead: () => {
+        window.addEventListener("storage", function (event) {
+            if (event.key !== "autoCallNextLead") return;
+            Green.tryAutoCallNextLead(event.newValue);
+        });
+
+        Green.tryAutoCallNextLead(localStorage.getItem("autoCallNextLead"));
+    },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {
             if (localStorage.getItem("switchKeys") == 'true') {
@@ -262,6 +312,7 @@ const Green = {
         Green.modManu();
         Green.onAltCall();
         Green.onShiftHengUp();
+        Green.bindAutoCallNextLead();
         //Green.bindCallImageConfirm();
         DetectPage();
     },

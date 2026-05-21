@@ -12,6 +12,13 @@ function setCallAsEnded () {
                 status: "close"
             })
         );
+
+        localStorage.setItem("autoCallNextLead",
+            JSON.stringify({
+                closedUserId: currentContent.userId,
+                createdAt: Date.now()
+            })
+        );
     }
 }
 
