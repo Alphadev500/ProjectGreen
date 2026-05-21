@@ -220,23 +220,7 @@ const Green = {
             }
         });
     },
-    changeSendEmailStatus: () => {
-        document.addEventListener('keydown', function(event) {
-            if (event.key === "Alt" && event.location === 2) {
-                if (localStorage.getItem('AutoEmails') == 'true') {
-                    localStorage.removeItem('AutoEmails');
-                    localStorage.setItem('AutoEmails', false);
-                    localStorage.setItem('autoEmail', false);
-                    Green.sendEmail = false;
-                } else {
-                    localStorage.removeItem('AutoEmails');
-                    localStorage.setItem('AutoEmails', true);
-                    localStorage.setItem('autoEmail', true);
-                    Green.sendEmail = true;
-                }
-            }
-        });
-    },
+    changeSendEmailStatus: () => {},
     initOnConfirm: () => {
         //let intervalID = setInterval(() => {
             Green.callIconClick(() => {
@@ -257,9 +241,11 @@ const Green = {
                 }
 
                 saveAndCloseLeedsPage();
-                Green.setTimeout(() => {
-                    sendEmail();
-                }, 1000, 1500);
+                if (Green.sendEmail == 'true') {
+                    Green.setTimeout(() => {
+                        sendEmail();
+                    }, 1000, 1500);
+                }
             });
             //clearInterval(intervalID);
         //}, 500);
