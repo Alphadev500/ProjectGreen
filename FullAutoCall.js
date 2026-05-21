@@ -236,13 +236,11 @@ const Green = {
     initOnConfirm: () => {
         let intervalID = setInterval(() => {
             Green.playerName(() => {
-
                 let talk = document.querySelectorAll('.table-content')[2].querySelectorAll('.table-row')[6].querySelector('.value-input-text').innerText;
 
                 if (talk == 'Yes') {
                     Green.ifElementExists('.el-button.el-button--danger', () => {
                         document.querySelector('.el-button.el-button--danger').click();
-                        console.log('clicked');
                     });
 
                     Green.ifElementExists('.el-button.el-button--success.mt-4', () => {
@@ -251,6 +249,7 @@ const Green = {
                 } else {
                     Green.ifElementExists('.el-button.el-button--success.mt-4', () => {
                         document.querySelector('.el-button.el-button--success.mt-4').click();
+                        console.log('clicked');
                     });
                 }
 
