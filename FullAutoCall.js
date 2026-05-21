@@ -236,7 +236,6 @@ const Green = {
     initOnConfirm: () => {
         let intervalID = setInterval(() => {
             Green.playerName(() => {
-                console.log('from playerName');
                 let talk = document.querySelectorAll('.table-content')[2].querySelectorAll('.table-row')[6].querySelector('.value-input-text').innerText;
 
                 if (talk == 'Yes') {
@@ -249,11 +248,10 @@ const Green = {
                     });
                 } else {
                     Green.ifElementExists('.el-button.el-button--success.mt-4', () => {
+                        console.log('clicked');
                         document.querySelector('.el-button.el-button--success.mt-4').click();
                     });
                 }
-
-                console.log('clicked');
 
                 saveAndCloseLeedsPage();
                 Green.setTimeout(() => {
