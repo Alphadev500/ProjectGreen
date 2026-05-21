@@ -8,6 +8,8 @@ const Green = {
     callConfirmWatcherActive: false,
     callIconClickElement: null,
     callIconClickListener: null,
+    successClickPending: false,
+    successClickResetTimeout: null,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
     },
@@ -189,6 +191,35 @@ const Green = {
             callButton.addEventListener("click", callback, { once: true });
         });
     },
+    clickSuccessButtonOnce: () => {
+        if (Green.successClickPending) return false;
+
+        Green.successClickPending = true;
+
+        if (Green.successClickResetTimeout) {
+            clearTimeout(Green.successClickResetTimeout);
+        }
+
+        Green.successClickResetTimeout = setTimeout(() => {
+            Green.successClickPending = false;
+            Green.successClickResetTimeout = null;
+        }, 30500);
+
+        Green.ifElementExists('.el-button.el-button--success.mt-4', (successButton) => {
+            if (!Green.successClickPending) return;
+
+            Green.successClickPending = false;
+
+            if (Green.successClickResetTimeout) {
+                clearTimeout(Green.successClickResetTimeout);
+                Green.successClickResetTimeout = null;
+            }
+
+            successButton.click();
+        });
+
+        return true;
+    },
     onShiftHengUp: () => {
         document.addEventListener('keydown', function(event) {
             if ((event.key === "Shift" && event.location === 2) || event.key === "F9") {
@@ -233,15 +264,10 @@ const Green = {
                 if (talk == 'Yes') {
                     Green.ifElementExists('.el-button.el-button--danger', () => {
                         document.querySelector('.el-button.el-button--danger').click();
-                    });
-
-                    Green.ifElementExists('.el-button.el-button--success.mt-4', () => {
-                        document.querySelector('.el-button.el-button--success.mt-4').click();
+                        Green.clickSuccessButtonOnce();
                     });
                 } else {
-                    Green.ifElementExists('.el-button.el-button--success.mt-4', () => {
-                        document.querySelector('.el-button.el-button--success.mt-4').click();
-                    });
+                    Green.clickSuccessButtonOnce();
                 }
 
                 saveAndCloseLeedsPage();
