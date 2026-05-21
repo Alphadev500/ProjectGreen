@@ -127,6 +127,12 @@ const Green = {
                 localStorage.setItem("switchKeys", switchKeys.checked);
                 localStorage.setItem("autoEmailTempName", autoEmailTempName.value);
 
+                if (autoEmail.checked) {
+                    Green.sendEmail = true;
+                } else {
+                    Green.sendEmail = false;
+                }
+
                 menu.classList.remove("active");
             });
 
