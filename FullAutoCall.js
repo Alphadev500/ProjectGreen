@@ -6,11 +6,6 @@ const Green = {
     onCall: false,
     page: false,
     callConfirmWatcherActive: false,
-    callIconClickElement: null,
-    callIconClickListener: null,
-    successClickPending: false,
-    successClickResetTimeout: null,
-    confirmFlowResetTimeout: null,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
     },
@@ -180,65 +175,9 @@ const Green = {
         return intervalID;
     },
     callIconClick: (callback=null) => {
-        if (!callback) return null;
-
-        return Green.ifElementExists('.table-row__image.call-img', (callButton) => {
-            if (Green.callIconClickElement && Green.callIconClickListener) {
-                Green.callIconClickElement.removeEventListener("click", Green.callIconClickListener);
-            }
-
-            Green.callIconClickElement = callButton;
-            Green.callIconClickListener = callback;
-            callButton.addEventListener("click", callback, { once: true });
+        Green.ifElementExists('.table-row__image.call-img', () => {
+            document.querySelector('.table-row__image.call-img').addEventListener("click", callback);
         });
-    },
-    clickSuccessButtonOnce: () => {
-        const lastSuccessClickAt = Number(window.GreenLastSuccessClickAt || 0);
-
-        if (Date.now() - lastSuccessClickAt < 30000) return false;
-        if (Green.successClickPending || window.GreenSuccessClickPending) return false;
-
-        Green.successClickPending = true;
-        window.GreenSuccessClickPending = true;
-
-        if (Green.successClickResetTimeout) {
-            clearTimeout(Green.successClickResetTimeout);
-        }
-
-        Green.successClickResetTimeout = setTimeout(() => {
-            Green.successClickPending = false;
-            window.GreenSuccessClickPending = false;
-            Green.successClickResetTimeout = null;
-        }, 30500);
-
-        Green.ifElementExists('.el-button.el-button--success.mt-4', (successButton) => {
-            if (!Green.successClickPending || !window.GreenSuccessClickPending) return;
-            if (Date.now() - Number(window.GreenLastSuccessClickAt || 0) < 30000) {
-                Green.successClickPending = false;
-                window.GreenSuccessClickPending = false;
-                return;
-            }
-
-            if (successButton.dataset.greenClicked === 'true') {
-                Green.successClickPending = false;
-                window.GreenSuccessClickPending = false;
-                return;
-            }
-
-            successButton.dataset.greenClicked = 'true';
-            window.GreenLastSuccessClickAt = Date.now();
-            Green.successClickPending = false;
-            window.GreenSuccessClickPending = false;
-
-            if (Green.successClickResetTimeout) {
-                clearTimeout(Green.successClickResetTimeout);
-                Green.successClickResetTimeout = null;
-            }
-
-            successButton.click();
-        });
-
-        return true;
     },
     onShiftHengUp: () => {
         document.addEventListener('keydown', function(event) {
@@ -279,28 +218,20 @@ const Green = {
     initOnConfirm: () => {
         //let intervalID = setInterval(() => {
             Green.callIconClick(() => {
-                if (window.GreenConfirmFlowActive) return;
-
-                window.GreenConfirmFlowActive = true;
-
-                if (Green.confirmFlowResetTimeout) {
-                    clearTimeout(Green.confirmFlowResetTimeout);
-                }
-
-                Green.confirmFlowResetTimeout = setTimeout(() => {
-                    window.GreenConfirmFlowActive = false;
-                    Green.confirmFlowResetTimeout = null;
-                }, 30000);
-
                 let talk = document.querySelectorAll('.table-content')[2].querySelectorAll('.table-row')[6].querySelector('.value-input-text').innerText;
 
                 if (talk == 'Yes') {
                     Green.ifElementExists('.el-button.el-button--danger', () => {
                         document.querySelector('.el-button.el-button--danger').click();
-                        //Green.clickSuccessButtonOnce();
                     });
+
+                    // Green.ifElementExists('.el-button.el-button--success.mt-4', () => {
+                    //     document.querySelector('.el-button.el-button--success.mt-4').click();
+                    // });
                 } else {
-                    //Green.clickSuccessButtonOnce();
+                    // Green.ifElementExists('.el-button.el-button--success.mt-4', () => {
+                    //     document.querySelector('.el-button.el-button--success.mt-4').click();
+                    // });
                 }
 
                 saveAndCloseLeedsPage();
@@ -323,6 +254,7 @@ const Green = {
         Green.modManu();
         Green.onAltCall();
         Green.onShiftHengUp();
+        Green.bindCallImageConfirm();
         DetectPage();
     },
 };
