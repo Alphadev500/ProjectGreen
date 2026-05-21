@@ -248,10 +248,13 @@ const Green = {
                     });
                 } else {
                     Green.ifElementExists('.el-button.el-button--success.mt-4', () => {
-                        console.log('clicked');
                         document.querySelector('.el-button.el-button--success.mt-4').click();
                     });
                 }
+
+                document.querySelector('.el-button.el-button--success.mt-4').addEventListener('click', () => {
+                    console.log('clicked');
+                });
 
                 saveAndCloseLeedsPage();
                 Green.setTimeout(() => {
