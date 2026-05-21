@@ -191,6 +191,8 @@ const Green = {
         const callButton = document.querySelector('.table-row__image.call-img');
         if (!callButton) return;
 
+        console.log('click');
+
         //callButton.click();
     },
     bindCallImageConfirm: () => {
