@@ -187,13 +187,11 @@ const Green = {
             }
         });
     },
-    autoConfirmCallDialog: () => {},
     clickCallAndConfirm: () => {
         const callButton = document.querySelector('.table-row__image.call-img');
         if (!callButton) return;
 
-        callButton.click();
-        Green.autoConfirmCallDialog();
+        //callButton.click();
     },
     bindCallImageConfirm: () => {
         const trigger = (event) => {
