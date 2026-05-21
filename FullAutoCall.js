@@ -242,6 +242,7 @@ const Green = {
                 if (talk == 'Yes') {
                     Green.ifElementExists('.el-button.el-button--danger', () => {
                         document.querySelector('.el-button.el-button--danger').click();
+                        console.log('clicked');
                     });
 
                     Green.ifElementExists('.el-button.el-button--success.mt-4', () => {
