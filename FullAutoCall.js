@@ -174,10 +174,18 @@ const Green = {
     },
     onShiftHengUp: () => {
         document.addEventListener('keydown', function(event) {
-            if ((event.key === "Shift" && event.location === 2) || event.key === "F9") {
-                localStorage.removeItem("hengUp");
-                localStorage.setItem('hengUp', true);
+            if (localStorage.getItem("switchKeys") == 'true') {
+                if (event.key === "F9") {
+                    localStorage.removeItem("hengUp");
+                    localStorage.setItem('hengUp', true);
+                }
+            } else{
+                if (event.key === "Shift" && event.location === 2) {
+                    localStorage.removeItem("hengUp");
+                    localStorage.setItem('hengUp', true);
+                }
             }
+
         });
     },
     clickCallAndConfirm: () => {
@@ -190,9 +198,14 @@ const Green = {
     },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {
-
-            if ((event.key === "Control" && event.location === 2) || event.key === "F8") {
-                Green.clickCallAndConfirm();
+            if (localStorage.getItem("switchKeys") == 'true') {
+                if (event.key === "F8") {
+                    Green.clickCallAndConfirm();
+                }
+            } else {
+                if (event.key === "Control" && event.location === 2) {
+                    Green.clickCallAndConfirm();
+                }
             }
         });
     },
