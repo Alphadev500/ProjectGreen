@@ -1,6 +1,6 @@
 const Green = {
     autoSendEmailTempName: localStorage.getItem("autoEmailTempName") || "new",
-    sendEmail: localStorage.getItem("AutoEmails") !== "false",
+    sendEmail: localStorage.getItem("AutoEmails") !== "false" ? true : false,
     userFTD: false,
     callCanselIntervals: [Number(localStorage.getItem("autoHengupTimer")) || 35],
     onCall: false,
@@ -241,7 +241,7 @@ const Green = {
                 }
 
                 saveAndCloseLeedsPage();
-                if (Green.sendEmail == 'true') {
+                if (Green.sendEmail == true) {
                     Green.setTimeout(() => {
                         sendEmail();
                     }, 1000, 1500);
