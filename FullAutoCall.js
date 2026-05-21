@@ -249,9 +249,10 @@ const Green = {
                 } else {
                     Green.ifElementExists('.el-button.el-button--success.mt-4', () => {
                         document.querySelector('.el-button.el-button--success.mt-4').click();
-                        console.log('clicked');
                     });
                 }
+
+                console.log('clicked');
 
                 saveAndCloseLeedsPage();
                 Green.setTimeout(() => {
