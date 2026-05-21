@@ -192,9 +192,10 @@ const Green = {
         });
     },
     clickSuccessButtonOnce: () => {
-        if (Green.successClickPending) return false;
+        if (Green.successClickPending || window.GreenSuccessClickPending) return false;
 
         Green.successClickPending = true;
+        window.GreenSuccessClickPending = true;
 
         if (Green.successClickResetTimeout) {
             clearTimeout(Green.successClickResetTimeout);
@@ -202,13 +203,17 @@ const Green = {
 
         Green.successClickResetTimeout = setTimeout(() => {
             Green.successClickPending = false;
+            window.GreenSuccessClickPending = false;
             Green.successClickResetTimeout = null;
         }, 30500);
 
         Green.ifElementExists('.el-button.el-button--success.mt-4', (successButton) => {
-            if (!Green.successClickPending) return;
+            if (!Green.successClickPending || !window.GreenSuccessClickPending) return;
+            if (successButton.dataset.greenClicked === 'true') return;
 
+            successButton.dataset.greenClicked = 'true';
             Green.successClickPending = false;
+            window.GreenSuccessClickPending = false;
 
             if (Green.successClickResetTimeout) {
                 clearTimeout(Green.successClickResetTimeout);
