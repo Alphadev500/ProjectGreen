@@ -2,7 +2,7 @@ const Green = {
     autoSendEmailTempName: localStorage.getItem("autoEmailTempName") || "new",
     sendEmail: true,
     userFTD: false,
-    callCanselIntervals: [35],
+    callCanselIntervals: [Number(localStorage.getItem("autoHengupTimer")) || 35],
     onCall: false,
     page: false,
     callConfirmWatcherActive: false,
@@ -104,6 +104,11 @@ const Green = {
                     <span>Email Template Name</span>
                     <input type="text" id="autoEmailTempName" class="mod-input" placeholder="Enter name...">
                 </div>
+
+                <div class="mod-option" style="flex-direction: column; align-items: flex-start;">
+                    <span>Auto Hengup Timer</span>
+                    <input type="number" id="autoHengupTimer" class="mod-input" min="1" placeholder="35">
+                </div>
         
                 <button class="save-btn" id="saveSettings">Save</button>
             `;
@@ -114,18 +119,22 @@ const Green = {
             const autoEmail = document.getElementById("autoEmail");
             const switchKeys = document.getElementById("switchKeys");
             const autoEmailTempName = document.getElementById("autoEmailTempName");
+            const autoHengupTimer = document.getElementById("autoHengupTimer");
             const saveBtn = document.getElementById("saveSettings");
 
             // ===== LOAD FROM LOCALSTORAGE =====
             autoEmail.checked = localStorage.getItem("autoEmail") === "true";
             switchKeys.checked = localStorage.getItem("switchKeys") === "true";
             autoEmailTempName.value = localStorage.getItem("autoEmailTempName") || "";
+            autoHengupTimer.value = localStorage.getItem("autoHengupTimer") || "35";
 
             // ===== SAVE LOGIC =====
             saveBtn.addEventListener("click", () => {
                 localStorage.setItem("autoEmail", autoEmail.checked);
                 localStorage.setItem("switchKeys", switchKeys.checked);
                 localStorage.setItem("autoEmailTempName", autoEmailTempName.value);
+                localStorage.setItem("autoHengupTimer", autoHengupTimer.value || "35");
+                Green.callCanselIntervals = [Number(autoHengupTimer.value) || 35];
 
                 if (autoEmail.checked) {
                     Green.sendEmail = true;
