@@ -127,13 +127,6 @@ const Green = {
                 localStorage.setItem("switchKeys", switchKeys.checked);
                 localStorage.setItem("autoEmailTempName", autoEmailTempName.value);
 
-                console.log("Saved:", {
-                    autoEmail: autoEmail.checked,
-                    switchKeys: switchKeys.checked,
-                    autoEmailTempName: autoEmailTempName.value
-                });
-
-                // Hide menu after saving
                 menu.classList.remove("active");
             });
 
@@ -197,6 +190,7 @@ const Green = {
     },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {
+
             if ((event.key === "Control" && event.location === 2) || event.key === "F8") {
                 Green.clickCallAndConfirm();
             }
@@ -254,7 +248,7 @@ const Green = {
         Green.modManu();
         Green.onAltCall();
         Green.onShiftHengUp();
-        Green.bindCallImageConfirm();
+        //Green.bindCallImageConfirm();
         DetectPage();
     },
 };
