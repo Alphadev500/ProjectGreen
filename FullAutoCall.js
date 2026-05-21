@@ -236,6 +236,7 @@ const Green = {
     initOnConfirm: () => {
         let intervalID = setInterval(() => {
             Green.playerName(() => {
+                console.log('from playerName');
                 let talk = document.querySelectorAll('.table-content')[2].querySelectorAll('.table-row')[6].querySelector('.value-input-text').innerText;
 
                 if (talk == 'Yes') {
