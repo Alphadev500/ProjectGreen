@@ -10,6 +10,7 @@ const Green = {
     callIconClickListener: null,
     successClickPending: false,
     successClickResetTimeout: null,
+    confirmFlowResetTimeout: null,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
     },
@@ -192,6 +193,9 @@ const Green = {
         });
     },
     clickSuccessButtonOnce: () => {
+        const lastSuccessClickAt = Number(window.GreenLastSuccessClickAt || 0);
+
+        if (Date.now() - lastSuccessClickAt < 30000) return false;
         if (Green.successClickPending || window.GreenSuccessClickPending) return false;
 
         Green.successClickPending = true;
@@ -209,9 +213,20 @@ const Green = {
 
         Green.ifElementExists('.el-button.el-button--success.mt-4', (successButton) => {
             if (!Green.successClickPending || !window.GreenSuccessClickPending) return;
-            if (successButton.dataset.greenClicked === 'true') return;
+            if (Date.now() - Number(window.GreenLastSuccessClickAt || 0) < 30000) {
+                Green.successClickPending = false;
+                window.GreenSuccessClickPending = false;
+                return;
+            }
+
+            if (successButton.dataset.greenClicked === 'true') {
+                Green.successClickPending = false;
+                window.GreenSuccessClickPending = false;
+                return;
+            }
 
             successButton.dataset.greenClicked = 'true';
+            window.GreenLastSuccessClickAt = Date.now();
             Green.successClickPending = false;
             window.GreenSuccessClickPending = false;
 
@@ -264,6 +279,19 @@ const Green = {
     initOnConfirm: () => {
         //let intervalID = setInterval(() => {
             Green.callIconClick(() => {
+                if (window.GreenConfirmFlowActive) return;
+
+                window.GreenConfirmFlowActive = true;
+
+                if (Green.confirmFlowResetTimeout) {
+                    clearTimeout(Green.confirmFlowResetTimeout);
+                }
+
+                Green.confirmFlowResetTimeout = setTimeout(() => {
+                    window.GreenConfirmFlowActive = false;
+                    Green.confirmFlowResetTimeout = null;
+                }, 30000);
+
                 let talk = document.querySelectorAll('.table-content')[2].querySelectorAll('.table-row')[6].querySelector('.value-input-text').innerText;
 
                 if (talk == 'Yes') {
