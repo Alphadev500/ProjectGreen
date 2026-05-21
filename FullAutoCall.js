@@ -175,12 +175,8 @@ const Green = {
         return intervalID;
     },
     playerName: (callback=null) => {
-        Green.setTimeout(() => {
-            if (callback) {
-                // This is the call Icon on the man page of the lead
-                console.log('loaded');
-                document.querySelector('.table-row__image.call-img').addEventListener("click", callback);
-            }
+        Green.ifElementExists('.table-row__image.call-img', () => {
+            document.querySelector('.table-row__image.call-img').addEventListener("click", callback);
         });
     },
     onShiftHengUp: () => {
@@ -234,7 +230,7 @@ const Green = {
         });
     },
     initOnConfirm: () => {
-        let intervalID = setInterval(() => {
+        //let intervalID = setInterval(() => {
             Green.playerName(() => {
                 let talk = document.querySelectorAll('.table-content')[2].querySelectorAll('.table-row')[6].querySelector('.value-input-text').innerText;
 
@@ -252,17 +248,13 @@ const Green = {
                     });
                 }
 
-                document.querySelector('.el-button.el-button--success.mt-4').addEventListener('click', () => {
-                    console.log('clicked');
-                });
-
                 saveAndCloseLeedsPage();
                 Green.setTimeout(() => {
                     sendEmail();
                 }, 1000, 1500);
             });
-            clearInterval(intervalID);
-        }, 500);
+            //clearInterval(intervalID);
+        //}, 500);
     },
     sendEmailAndCall () {
         Green.setTimeout(() => {
