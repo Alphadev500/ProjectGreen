@@ -174,7 +174,7 @@ const Green = {
 
         return intervalID;
     },
-    playerName: (callback=null) => {
+    callIconClick: (callback=null) => {
         Green.ifElementExists('.table-row__image.call-img', () => {
             document.querySelector('.table-row__image.call-img').addEventListener("click", callback);
         });
@@ -191,9 +191,9 @@ const Green = {
         const callButton = document.querySelector('.table-row__image.call-img');
         if (!callButton) return;
 
-        console.log('click');
-
-        //callButton.click();
+        Green.ifElementExists('.table-row__image.call-img', () => {
+            callButton.click();
+        });
     },
     bindCallImageConfirm: () => {
         const trigger = (event) => {
@@ -231,7 +231,7 @@ const Green = {
     },
     initOnConfirm: () => {
         //let intervalID = setInterval(() => {
-            Green.playerName(() => {
+            Green.callIconClick(() => {
                 let talk = document.querySelectorAll('.table-content')[2].querySelectorAll('.table-row')[6].querySelector('.value-input-text').innerText;
 
                 if (talk == 'Yes') {
@@ -258,7 +258,7 @@ const Green = {
     },
     sendEmailAndCall () {
         Green.setTimeout(() => {
-            Green.initOnConfirm()
+            Green.initOnConfirm();
         }, 1000, 1500);
     },
     getRandomIntervalNumber: () => {
