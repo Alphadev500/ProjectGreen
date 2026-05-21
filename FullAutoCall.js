@@ -297,10 +297,10 @@ const Green = {
                 if (talk == 'Yes') {
                     Green.ifElementExists('.el-button.el-button--danger', () => {
                         document.querySelector('.el-button.el-button--danger').click();
-                        Green.clickSuccessButtonOnce();
+                        //Green.clickSuccessButtonOnce();
                     });
                 } else {
-                    Green.clickSuccessButtonOnce();
+                    //Green.clickSuccessButtonOnce();
                 }
 
                 saveAndCloseLeedsPage();
