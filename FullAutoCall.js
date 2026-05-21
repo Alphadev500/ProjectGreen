@@ -214,7 +214,12 @@ const Green = {
             return null;
         }
     },
+    isActiveTab: () => {
+        return document.visibilityState === 'visible' || document.hasFocus();
+    },
     tryAutoCallNextLead: (signal) => {
+        if (!Green.isActiveTab()) return false;
+
         let content = signal;
 
         if (typeof content === 'string') {
@@ -232,7 +237,11 @@ const Green = {
         if (!currentLeadId || currentLeadId == content.closedUserId) return false;
 
         const claim = JSON.parse(localStorage.getItem("autoCallNextLeadClaim") || "null");
-        if (claim && Date.now() - claim.createdAt < 30000) return false;
+        if (claim && Date.now() - claim.createdAt >= 30000) {
+            localStorage.removeItem("autoCallNextLeadClaim");
+        } else if (claim) {
+            return false;
+        }
 
         localStorage.setItem("autoCallNextLeadClaim", JSON.stringify({
             userId: currentLeadId,
@@ -250,12 +259,24 @@ const Green = {
         return true;
     },
     bindAutoCallNextLead: () => {
+        const tryPendingAutoCall = () => {
+            Green.tryAutoCallNextLead(localStorage.getItem("autoCallNextLead"));
+        };
+
         window.addEventListener("storage", function (event) {
             if (event.key !== "autoCallNextLead") return;
             Green.tryAutoCallNextLead(event.newValue);
         });
 
-        Green.tryAutoCallNextLead(localStorage.getItem("autoCallNextLead"));
+        window.addEventListener("focus", tryPendingAutoCall);
+        window.addEventListener("pageshow", tryPendingAutoCall);
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === 'visible') {
+                tryPendingAutoCall();
+            }
+        });
+
+        tryPendingAutoCall();
     },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {
