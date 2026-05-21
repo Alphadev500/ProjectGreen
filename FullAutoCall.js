@@ -1,6 +1,6 @@
 const Green = {
     autoSendEmailTempName: localStorage.getItem("autoEmailTempName") || "new",
-    sendEmail: true,
+    sendEmail: localStorage.getItem("AutoEmails") !== "false",
     userFTD: false,
     callCanselIntervals: [Number(localStorage.getItem("autoHengupTimer")) || 35],
     onCall: false,
@@ -123,7 +123,7 @@ const Green = {
             const saveBtn = document.getElementById("saveSettings");
 
             // ===== LOAD FROM LOCALSTORAGE =====
-            autoEmail.checked = localStorage.getItem("autoEmail") === "true";
+            autoEmail.checked = localStorage.getItem("AutoEmails") !== "false";
             switchKeys.checked = localStorage.getItem("switchKeys") === "true";
             autoEmailTempName.value = localStorage.getItem("autoEmailTempName") || "";
             autoHengupTimer.value = localStorage.getItem("autoHengupTimer") || "35";
@@ -131,16 +131,12 @@ const Green = {
             // ===== SAVE LOGIC =====
             saveBtn.addEventListener("click", () => {
                 localStorage.setItem("autoEmail", autoEmail.checked);
+                localStorage.setItem("AutoEmails", autoEmail.checked);
                 localStorage.setItem("switchKeys", switchKeys.checked);
                 localStorage.setItem("autoEmailTempName", autoEmailTempName.value);
                 localStorage.setItem("autoHengupTimer", autoHengupTimer.value || "35");
                 Green.callCanselIntervals = [Number(autoHengupTimer.value) || 35];
-
-                if (autoEmail.checked) {
-                    Green.sendEmail = true;
-                } else {
-                    Green.sendEmail = false;
-                }
+                Green.sendEmail = autoEmail.checked;
 
                 menu.classList.remove("active");
             });
@@ -230,9 +226,13 @@ const Green = {
                 if (localStorage.getItem('AutoEmails') == 'true') {
                     localStorage.removeItem('AutoEmails');
                     localStorage.setItem('AutoEmails', false);
+                    localStorage.setItem('autoEmail', false);
+                    Green.sendEmail = false;
                 } else {
                     localStorage.removeItem('AutoEmails');
                     localStorage.setItem('AutoEmails', true);
+                    localStorage.setItem('autoEmail', true);
+                    Green.sendEmail = true;
                 }
             }
         });
