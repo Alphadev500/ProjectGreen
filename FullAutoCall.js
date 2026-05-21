@@ -6,6 +6,8 @@ const Green = {
     onCall: false,
     page: false,
     callConfirmWatcherActive: false,
+    callIconClickElement: null,
+    callIconClickListener: null,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
     },
@@ -175,8 +177,16 @@ const Green = {
         return intervalID;
     },
     callIconClick: (callback=null) => {
-        Green.ifElementExists('.table-row__image.call-img', () => {
-            document.querySelector('.table-row__image.call-img').addEventListener("click", callback);
+        if (!callback) return null;
+
+        return Green.ifElementExists('.table-row__image.call-img', (callButton) => {
+            if (Green.callIconClickElement && Green.callIconClickListener) {
+                Green.callIconClickElement.removeEventListener("click", Green.callIconClickListener);
+            }
+
+            Green.callIconClickElement = callButton;
+            Green.callIconClickListener = callback;
+            callButton.addEventListener("click", callback, { once: true });
         });
     },
     onShiftHengUp: () => {
@@ -194,20 +204,6 @@ const Green = {
         Green.ifElementExists('.table-row__image.call-img', () => {
             callButton.click();
         });
-    },
-    bindCallImageConfirm: () => {
-        const trigger = (event) => {
-            const target = event.target;
-            if (!target || !target.closest) return;
-
-            if (target.closest('.table-row__image.call-img')) {
-                Green.autoConfirmCallDialog();
-            }
-        };
-
-        // Capture phase catches cases where bubbling is interrupted.
-        document.addEventListener('click', trigger, true);
-        document.addEventListener('pointerup', trigger, true);
     },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {
@@ -268,7 +264,6 @@ const Green = {
         Green.modManu();
         Green.onAltCall();
         Green.onShiftHengUp();
-        Green.bindCallImageConfirm();
         DetectPage();
     },
 };
