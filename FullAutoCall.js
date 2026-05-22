@@ -184,8 +184,8 @@ const Green = {
             callButton.addEventListener("click", callback);
             Green.autoCallReady = true;
 
-            if (Green.tryAutoCallNextLead) {
-                Green.tryAutoCallNextLead(localStorage.getItem("autoCallNextLead"));
+            if (Green.scheduleAutoCallNextLead) {
+                Green.scheduleAutoCallNextLead();
             }
         });
     },
@@ -223,8 +223,22 @@ const Green = {
     isActiveTab: () => {
         return document.visibilityState === 'visible' || document.hasFocus();
     },
+    scheduleAutoCallNextLead: () => {
+        if (Green.autoCallNextLeadTimer) clearTimeout(Green.autoCallNextLeadTimer);
+
+        let tries = 0;
+        const tryCall = () => {
+            tries++;
+
+            if (Green.tryAutoCallNextLead(localStorage.getItem("autoCallNextLead"))) return;
+            if (tries >= 20) return;
+
+            Green.autoCallNextLeadTimer = setTimeout(tryCall, 250);
+        };
+
+        Green.autoCallNextLeadTimer = setTimeout(tryCall, 100);
+    },
     tryAutoCallNextLead: (signal) => {
-        if (!Green.isActiveTab()) return false;
         if (!Green.autoCallReady) return false;
 
         let content = signal;
@@ -238,7 +252,7 @@ const Green = {
         }
 
         if (!content || !content.createdAt) return false;
-        if (Date.now() - content.createdAt > 30000) return false;
+        if (Date.now() - content.createdAt > 120000) return false;
 
         const currentLeadId = Green.getCurrentLeadId();
         if (!currentLeadId || currentLeadId == content.closedUserId) return false;
@@ -262,6 +276,7 @@ const Green = {
             if (!latestClaim || latestClaim.userId != currentLeadId) return;
 
             callButton.click();
+            localStorage.removeItem("autoCallNextLeadClaim");
             localStorage.removeItem("autoCallNextLead");
         });
 
@@ -269,12 +284,12 @@ const Green = {
     },
     bindAutoCallNextLead: () => {
         const tryPendingAutoCall = () => {
-            Green.tryAutoCallNextLead(localStorage.getItem("autoCallNextLead"));
+            Green.scheduleAutoCallNextLead();
         };
 
         window.addEventListener("storage", function (event) {
             if (event.key !== "autoCallNextLead") return;
-            Green.tryAutoCallNextLead(event.newValue);
+            Green.scheduleAutoCallNextLead();
         });
 
         window.addEventListener("focus", tryPendingAutoCall);
