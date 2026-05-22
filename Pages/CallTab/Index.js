@@ -64,7 +64,7 @@ function closeLeadAfterHengUp () {
 
         Green.onCall = false;
         setCallAsEnded();
-    }, 150);
+    }, 50);
 }
 
 function actOnChangeRightShiftClickHengUp () {

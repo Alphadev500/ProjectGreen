@@ -147,7 +147,7 @@ const Green = {
                 localStorage.setItem("autoHengupTimer", autoHengupTimer.value || "35");
                 Green.callCanselIntervals = [Number(autoHengupTimer.value) || 35];
                 Green.sendEmail = autoEmail.checked;
-                Green.autoCallLeads = autoCalling.checked;
+                Green.setAutoCalling(autoCalling.checked);
 
                 menu.classList.remove("active");
             });
@@ -189,6 +189,53 @@ const Green = {
 
         return intervalID;
     },
+    renderAutomationHaze: () => {
+        let haze = document.getElementById("greenAutomationHaze");
+
+        if (!haze) {
+            haze = document.createElement("div");
+            haze.id = "greenAutomationHaze";
+            haze.style.position = "fixed";
+            haze.style.inset = "0";
+            haze.style.pointerEvents = "none";
+            haze.style.zIndex = "999998";
+            haze.style.transition = "box-shadow 0.18s ease, background 0.18s ease";
+            document.documentElement.appendChild(haze);
+        }
+
+        if (Green.autoCallLeads) {
+            haze.style.boxShadow = "inset 0 0 28px 7px rgba(46, 204, 113, 0.22)";
+            haze.style.background = "rgba(46, 204, 113, 0.025)";
+        } else {
+            haze.style.boxShadow = "inset 0 0 28px 7px rgba(231, 76, 60, 0.26)";
+            haze.style.background = "rgba(231, 76, 60, 0.035)";
+        }
+    },
+    setAutoCalling: (enabled) => {
+        Green.autoCallLeads = enabled;
+        localStorage.setItem("AutoCalling", enabled);
+
+        const autoCalling = document.getElementById("autoCalling");
+        if (autoCalling) autoCalling.checked = enabled;
+
+        if (!enabled) {
+            if (Green.autoCallNextLeadTimer) clearTimeout(Green.autoCallNextLeadTimer);
+            localStorage.removeItem("autoCallNextLead");
+            localStorage.removeItem("autoCallNextLeadClaim");
+        } else {
+            Green.scheduleAutoCallNextLead();
+        }
+
+        Green.renderAutomationHaze();
+    },
+    bindStopToggle: () => {
+        document.addEventListener("keydown", (event) => {
+            if (event.key !== "F6") return;
+
+            event.preventDefault();
+            Green.setAutoCalling(!Green.autoCallLeads);
+        });
+    },
     callIconClick: (callback=null) => {
         Green.ifElementExists('.table-row__image.call-img', (callButton) => {
             callButton.addEventListener("click", callback);
@@ -197,7 +244,7 @@ const Green = {
             if (Green.scheduleAutoCallNextLead) {
                 Green.scheduleAutoCallNextLead();
             }
-        });
+        }, 30000, 100);
     },
     onShiftHengUp: () => {
         document.addEventListener('keydown', function(event) {
@@ -242,12 +289,12 @@ const Green = {
             tries++;
 
             if (Green.tryAutoCallNextLead(localStorage.getItem("autoCallNextLead"))) return;
-            if (tries >= 20) return;
+            if (tries >= 40) return;
 
-            Green.autoCallNextLeadTimer = setTimeout(tryCall, 250);
+            Green.autoCallNextLeadTimer = setTimeout(tryCall, 100);
         };
 
-        Green.autoCallNextLeadTimer = setTimeout(tryCall, 100);
+        Green.autoCallNextLeadTimer = setTimeout(tryCall, 25);
     },
     tryAutoCallNextLead: (signal) => {
         if (!Green.autoCallLeads) return false;
@@ -401,7 +448,7 @@ const Green = {
 
         Green.setTimeout(() => {
             window.location.assign(nextHref);
-        }, 50, false);
+        }, 10, false);
 
         return true;
     },
@@ -458,6 +505,8 @@ const Green = {
     },
     init: () => {
         Green.modManu();
+        Green.bindStopToggle();
+        Green.renderAutomationHaze();
         Green.onAltCall();
         Green.onShiftHengUp();
         Green.bindAutoCallNextLead();

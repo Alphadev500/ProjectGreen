@@ -17,5 +17,5 @@ function DetectPage (callback) {
                 SearchTab();
             }
         }
-    }, 500);
+    }, 200);
 }
