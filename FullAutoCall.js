@@ -6,6 +6,7 @@ const Green = {
     onCall: false,
     page: false,
     callConfirmWatcherActive: false,
+    autoCallReady: false,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
     },
@@ -179,8 +180,13 @@ const Green = {
         return intervalID;
     },
     callIconClick: (callback=null) => {
-        Green.ifElementExists('.table-row__image.call-img', () => {
-            document.querySelector('.table-row__image.call-img').addEventListener("click", callback);
+        Green.ifElementExists('.table-row__image.call-img', (callButton) => {
+            callButton.addEventListener("click", callback);
+            Green.autoCallReady = true;
+
+            if (Green.tryAutoCallNextLead) {
+                Green.tryAutoCallNextLead(localStorage.getItem("autoCallNextLead"));
+            }
         });
     },
     onShiftHengUp: () => {
@@ -219,6 +225,7 @@ const Green = {
     },
     tryAutoCallNextLead: (signal) => {
         if (!Green.isActiveTab()) return false;
+        if (!Green.autoCallReady) return false;
 
         let content = signal;
 
