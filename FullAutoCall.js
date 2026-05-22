@@ -193,16 +193,17 @@ const Green = {
         const oldHaze = document.getElementById("greenAutomationHaze");
         if (oldHaze) oldHaze.remove();
 
-        const target = document.body || document.documentElement;
-        if (!target) return;
+        const targets = [document.documentElement, document.body].filter(Boolean);
+        if (!targets.length) return;
 
-        target.style.transition = "box-shadow 0.18s ease";
+        const color = Green.autoCallLeads ? "46, 204, 113" : "231, 76, 60";
 
-        if (Green.autoCallLeads) {
-            target.style.boxShadow = "inset 0 0 18px 4px rgba(46, 204, 113, 0.12)";
-        } else {
-            target.style.boxShadow = "inset 0 0 18px 4px rgba(231, 76, 60, 0.14)";
-        }
+        targets.forEach((target) => {
+            target.style.transition = "box-shadow 0.18s ease, outline-color 0.18s ease";
+            target.style.outline = `4px solid rgba(${color}, 0.18)`;
+            target.style.outlineOffset = "-4px";
+            target.style.boxShadow = `inset 0 0 24px 7px rgba(${color}, 0.18)`;
+        });
     },
     setAutoCalling: (enabled) => {
         Green.autoCallLeads = enabled;
