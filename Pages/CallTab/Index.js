@@ -6,17 +6,18 @@ function setCallAsEnded () {
         let currentContent = localStorage.getItem(key);
         currentContent = JSON.parse(currentContent);
 
-        localStorage.setItem("user",
-            JSON.stringify({
-                userId: currentContent.userId,
-                status: "close"
-            })
-        );
-
         localStorage.setItem("autoCallNextLead",
             JSON.stringify({
                 closedUserId: currentContent.userId,
                 createdAt: Date.now()
+            })
+        );
+
+        localStorage.setItem("user",
+            JSON.stringify({
+                userId: currentContent.userId,
+                status: "close",
+                closedAt: Date.now()
             })
         );
     }
@@ -52,6 +53,20 @@ function hengUp () {
     hengUpButton().click();
 }
 
+function closeLeadAfterHengUp () {
+    if (Green.closeLeadAfterHengUpTimer) return;
+
+    Green.closeLeadAfterHengUpTimer = setTimeout(() => {
+        Green.closeLeadAfterHengUpTimer = null;
+
+        if (localStorage.getItem('userFTD')) return;
+        if (localStorage.getItem("user") == null) return;
+
+        Green.onCall = false;
+        setCallAsEnded();
+    }, 150);
+}
+
 function actOnChangeRightShiftClickHengUp () {
     window.addEventListener("storage", function (event) {
         if (event.key != "hengUp") return;
@@ -65,8 +80,13 @@ function actOnChangeRightShiftClickHengUp () {
 
 function saveOnHengUp () {
     try {
-        hengUpButton().addEventListener('click', () => {
+        const button = hengUpButton();
+        if (button.dataset.greenHengUpBound === "true") return;
+
+        button.dataset.greenHengUpBound = "true";
+        button.addEventListener('click', () => {
             localStorage.setItem('OnCall', false);
+            closeLeadAfterHengUp();
         });
     } catch (e) {
         //console.log(e);
@@ -84,7 +104,7 @@ function callCanselDetect () {
     if (localStorage.getItem("user") != null && Green.onCall) {
         if (properTime.minutes >= 2) localStorage.setItem('userFTD', true);
 
-        if (timeOnHold == '' && localStorage.getItem('userFTD') != true  && Green.onCall == true) {
+        if (timeOnHold == '' && !localStorage.getItem('userFTD')  && Green.onCall == true) {
             Green.onCall = false;
             setCallAsEnded();
         }
