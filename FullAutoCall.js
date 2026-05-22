@@ -240,6 +240,19 @@ const Green = {
             }
         }, 30000, 100);
     },
+    clickActivityTab: () => {
+        Green.ifElementExists('.tab-item.purple', (tab) => {
+            if ((tab.innerText || "").trim() === "Activity") {
+                tab.click();
+                return;
+            }
+
+            const activityTab = Array.from(document.querySelectorAll('.tab-item'))
+                .find((item) => (item.innerText || "").trim() === "Activity");
+
+            if (activityTab) activityTab.click();
+        }, 10000, 100);
+    },
     onShiftHengUp: () => {
         document.addEventListener('keydown', function(event) {
             if (localStorage.getItem("switchKeys") == 'true') {
@@ -490,9 +503,11 @@ const Green = {
         //}, 500);
     },
     sendEmailAndCall () {
+        Green.clickActivityTab();
+
         Green.setTimeout(() => {
             Green.initOnConfirm();
-        }, 1000, 1500);
+        }, 500, 800);
     },
     getRandomIntervalNumber: () => {
         return Green.callCanselIntervals[Math.floor(Math.random() * Green.callCanselIntervals.length)];
