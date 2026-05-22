@@ -240,18 +240,31 @@ const Green = {
             }
         }, 30000, 100);
     },
-    clickActivityTab: () => {
+    clickActivityTab: (callback=null) => {
+        let completed = false;
+        const done = () => {
+            if (completed) return;
+            completed = true;
+            if (callback) callback();
+        };
+
         Green.ifElementExists('.tab-item.purple', (tab) => {
             if ((tab.innerText || "").trim() === "Activity") {
                 tab.click();
+                done();
                 return;
             }
 
             const activityTab = Array.from(document.querySelectorAll('.tab-item'))
                 .find((item) => (item.innerText || "").trim() === "Activity");
 
-            if (activityTab) activityTab.click();
+            if (activityTab) {
+                activityTab.click();
+                done();
+            }
         }, 10000, 100);
+
+        Green.setTimeout(done, 1200, false);
     },
     onShiftHengUp: () => {
         document.addEventListener('keydown', function(event) {
@@ -503,11 +516,9 @@ const Green = {
         //}, 500);
     },
     sendEmailAndCall () {
-        Green.clickActivityTab();
-
-        Green.setTimeout(() => {
+        Green.clickActivityTab(() => {
             Green.initOnConfirm();
-        }, 500, 800);
+        });
     },
     getRandomIntervalNumber: () => {
         return Green.callCanselIntervals[Math.floor(Math.random() * Green.callCanselIntervals.length)];
