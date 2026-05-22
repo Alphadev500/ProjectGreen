@@ -3,9 +3,12 @@ function openUserTabs () {
 
     document.querySelectorAll('.table-body tr').forEach((e) => {
         const link = e.querySelector('.sticky-body .item-actions a');
-        if (!link || !link.href) return;
+        if (!link) return;
 
-        hrefs.push(link.href);
+        const href = link.getAttribute('href');
+        if (!href) return;
+
+        hrefs.push(href);
     });
 
     if (Green.startLeadQueue) {

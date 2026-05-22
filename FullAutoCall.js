@@ -1,6 +1,7 @@
 const Green = {
     autoSendEmailTempName: localStorage.getItem("autoEmailTempName") || "new",
     sendEmail: localStorage.getItem("AutoEmails") !== "false" ? true : false,
+    autoCallLeads: localStorage.getItem("AutoCalling") !== "false" ? true : false,
     userFTD: false,
     callCanselIntervals: [Number(localStorage.getItem("autoHengupTimer")) || 35],
     onCall: false,
@@ -95,6 +96,11 @@ const Green = {
                     <span>Auto Emails</span>
                     <input type="checkbox" id="autoEmail">
                 </div>
+
+                <div class="mod-option">
+                    <span>Auto Calling</span>
+                    <input type="checkbox" id="autoCalling">
+                </div>
         
                 <div class="mod-option">
                     <span>Switch Keys (F8/F9)</span>
@@ -118,6 +124,7 @@ const Green = {
 
             // ===== ELEMENTS =====
             const autoEmail = document.getElementById("autoEmail");
+            const autoCalling = document.getElementById("autoCalling");
             const switchKeys = document.getElementById("switchKeys");
             const autoEmailTempName = document.getElementById("autoEmailTempName");
             const autoHengupTimer = document.getElementById("autoHengupTimer");
@@ -125,6 +132,7 @@ const Green = {
 
             // ===== LOAD FROM LOCALSTORAGE =====
             autoEmail.checked = localStorage.getItem("AutoEmails") !== "false";
+            autoCalling.checked = localStorage.getItem("AutoCalling") !== "false";
             switchKeys.checked = localStorage.getItem("switchKeys") === "true";
             autoEmailTempName.value = localStorage.getItem("autoEmailTempName") || "";
             autoHengupTimer.value = localStorage.getItem("autoHengupTimer") || "35";
@@ -133,11 +141,13 @@ const Green = {
             saveBtn.addEventListener("click", () => {
                 localStorage.setItem("autoEmail", autoEmail.checked);
                 localStorage.setItem("AutoEmails", autoEmail.checked);
+                localStorage.setItem("AutoCalling", autoCalling.checked);
                 localStorage.setItem("switchKeys", switchKeys.checked);
                 localStorage.setItem("autoEmailTempName", autoEmailTempName.value);
                 localStorage.setItem("autoHengupTimer", autoHengupTimer.value || "35");
                 Green.callCanselIntervals = [Number(autoHengupTimer.value) || 35];
                 Green.sendEmail = autoEmail.checked;
+                Green.autoCallLeads = autoCalling.checked;
 
                 menu.classList.remove("active");
             });
@@ -224,6 +234,7 @@ const Green = {
         return document.visibilityState === 'visible' || document.hasFocus();
     },
     scheduleAutoCallNextLead: () => {
+        if (!Green.autoCallLeads) return false;
         if (Green.autoCallNextLeadTimer) clearTimeout(Green.autoCallNextLeadTimer);
 
         let tries = 0;
@@ -239,6 +250,7 @@ const Green = {
         Green.autoCallNextLeadTimer = setTimeout(tryCall, 100);
     },
     tryAutoCallNextLead: (signal) => {
+        if (!Green.autoCallLeads) return false;
         if (!Green.autoCallReady) return false;
 
         let content = signal;
@@ -321,15 +333,24 @@ const Green = {
     saveLeadQueue: (queue) => {
         localStorage.setItem("greenLeadQueue", JSON.stringify(queue));
     },
+    resolveLeadHref: (href) => {
+        if (!href) return null;
+
+        const link = document.createElement("a");
+        link.href = href;
+
+        return link.href;
+    },
     prefetchLeadHref: (href) => {
-        if (!href) return false;
+        const resolvedHref = Green.resolveLeadHref(href);
+        if (!resolvedHref) return false;
 
         try {
             document.querySelectorAll('link[data-green-lead-prefetch="true"]').forEach((link) => link.remove());
 
             const link = document.createElement("link");
             link.rel = "prefetch";
-            link.href = href;
+            link.href = resolvedHref;
             link.setAttribute("data-green-lead-prefetch", "true");
             document.head.appendChild(link);
 
@@ -347,8 +368,11 @@ const Green = {
     startLeadQueue: (hrefs) => {
         if (!Array.isArray(hrefs) || !hrefs.length) return false;
 
+        const resolvedHrefs = hrefs.map((href) => Green.resolveLeadHref(href)).filter(Boolean);
+        if (!resolvedHrefs.length) return false;
+
         const queue = {
-            hrefs: hrefs,
+            hrefs: resolvedHrefs,
             index: 0,
             createdAt: Date.now()
         };
@@ -364,7 +388,7 @@ const Green = {
         if (!queue) return false;
 
         const nextIndex = queue.index + 1;
-        const nextHref = queue.hrefs[nextIndex];
+        const nextHref = Green.resolveLeadHref(queue.hrefs[nextIndex]);
 
         if (!nextHref) {
             localStorage.removeItem("greenLeadQueue");
