@@ -237,10 +237,12 @@ const Green = {
         if (!currentLeadId || currentLeadId == content.closedUserId) return false;
 
         const claim = JSON.parse(localStorage.getItem("autoCallNextLeadClaim") || "null");
-        if (claim && Date.now() - claim.createdAt >= 30000) {
-            localStorage.removeItem("autoCallNextLeadClaim");
-        } else if (claim) {
-            return false;
+        if (claim) {
+            if (Date.now() - claim.createdAt >= 30000 || claim.userId != currentLeadId) {
+                localStorage.removeItem("autoCallNextLeadClaim");
+            } else {
+                return false;
+            }
         }
 
         localStorage.setItem("autoCallNextLeadClaim", JSON.stringify({
@@ -277,6 +279,87 @@ const Green = {
         });
 
         tryPendingAutoCall();
+    },
+    getLeadQueue: () => {
+        try {
+            const queue = JSON.parse(localStorage.getItem("greenLeadQueue") || "null");
+            if (!queue || !Array.isArray(queue.hrefs)) return null;
+
+            queue.index = Number(queue.index) || 0;
+            queue.hrefs = queue.hrefs.filter((href) => typeof href === "string" && href.length > 0);
+
+            if (!queue.hrefs.length) return null;
+
+            return queue;
+        } catch (e) {
+            localStorage.removeItem("greenLeadQueue");
+            return null;
+        }
+    },
+    saveLeadQueue: (queue) => {
+        localStorage.setItem("greenLeadQueue", JSON.stringify(queue));
+    },
+    prefetchLeadHref: (href) => {
+        if (!href) return false;
+
+        try {
+            document.querySelectorAll('link[data-green-lead-prefetch="true"]').forEach((link) => link.remove());
+
+            const link = document.createElement("link");
+            link.rel = "prefetch";
+            link.href = href;
+            link.setAttribute("data-green-lead-prefetch", "true");
+            document.head.appendChild(link);
+
+            fetch(href, {
+                credentials: "include",
+                cache: "force-cache"
+            }).catch(() => {});
+
+            return true;
+        } catch (e) {
+            return false;
+        }
+    },
+    prefetchQueuedLead: (offset=1) => {
+        const queue = Green.getLeadQueue();
+        if (!queue) return false;
+
+        return Green.prefetchLeadHref(queue.hrefs[queue.index + offset]);
+    },
+    startLeadQueue: (hrefs) => {
+        if (!Array.isArray(hrefs) || !hrefs.length) return false;
+
+        const queue = {
+            hrefs: hrefs,
+            index: 0,
+            createdAt: Date.now()
+        };
+
+        Green.saveLeadQueue(queue);
+        Green.prefetchQueuedLead(1);
+        window.open(queue.hrefs[0], "green-auto-lead");
+
+        return true;
+    },
+    openNextQueuedLead: () => {
+        const queue = Green.getLeadQueue();
+        if (!queue) return false;
+
+        const nextIndex = queue.index + 1;
+        const nextHref = queue.hrefs[nextIndex];
+
+        if (!nextHref) {
+            localStorage.removeItem("greenLeadQueue");
+            return false;
+        }
+
+        queue.index = nextIndex;
+        Green.saveLeadQueue(queue);
+        Green.prefetchQueuedLead(1);
+        window.location.href = nextHref;
+
+        return true;
     },
     onAltCall: () => {
         document.addEventListener('keydown', function(event) {

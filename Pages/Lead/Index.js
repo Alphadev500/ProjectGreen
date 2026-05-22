@@ -22,8 +22,9 @@ function actOnChange () {
             removeUserId();
             if (localStorage.getItem('userFTD')) {
                 localStorage.removeItem('userFTD');
+                if (Green.prefetchQueuedLead) Green.prefetchQueuedLead(1);
             } else {
-                window.close();
+                (Green.openNextQueuedLead && Green.openNextQueuedLead()) || window.close();
             }
         }
     });
