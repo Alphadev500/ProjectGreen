@@ -248,14 +248,14 @@ const Green = {
             if (callback) callback();
         };
 
-        Green.ifElementExists('.tab-item.purple', (tab) => {
+        Green.ifElementExists('.main-tabsNav .tab-item.purple', (tab) => {
             if ((tab.innerText || "").trim() === "Activity") {
                 tab.click();
                 done();
                 return;
             }
 
-            const activityTab = Array.from(document.querySelectorAll('.tab-item'))
+            const activityTab = Array.from(document.querySelectorAll('.main-tabsNav .tab-item'))
                 .find((item) => (item.innerText || "").trim() === "Activity");
 
             if (activityTab) {
