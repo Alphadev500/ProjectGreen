@@ -333,11 +333,6 @@ const Green = {
             link.setAttribute("data-green-lead-prefetch", "true");
             document.head.appendChild(link);
 
-            fetch(href, {
-                credentials: "include",
-                cache: "force-cache"
-            }).catch(() => {});
-
             return true;
         } catch (e) {
             return false;
@@ -379,7 +374,10 @@ const Green = {
         queue.index = nextIndex;
         Green.saveLeadQueue(queue);
         Green.prefetchQueuedLead(1);
-        window.location.href = nextHref;
+
+        Green.setTimeout(() => {
+            window.location.assign(nextHref);
+        }, 50, false);
 
         return true;
     },
