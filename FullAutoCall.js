@@ -190,25 +190,18 @@ const Green = {
         return intervalID;
     },
     renderAutomationHaze: () => {
-        let haze = document.getElementById("greenAutomationHaze");
+        const oldHaze = document.getElementById("greenAutomationHaze");
+        if (oldHaze) oldHaze.remove();
 
-        if (!haze) {
-            haze = document.createElement("div");
-            haze.id = "greenAutomationHaze";
-            haze.style.position = "fixed";
-            haze.style.inset = "0";
-            haze.style.pointerEvents = "none";
-            haze.style.zIndex = "999998";
-            haze.style.transition = "box-shadow 0.18s ease, background 0.18s ease";
-            document.documentElement.appendChild(haze);
-        }
+        const target = document.body || document.documentElement;
+        if (!target) return;
+
+        target.style.transition = "box-shadow 0.18s ease";
 
         if (Green.autoCallLeads) {
-            haze.style.boxShadow = "inset 0 0 28px 7px rgba(46, 204, 113, 0.22)";
-            haze.style.background = "rgba(46, 204, 113, 0.025)";
+            target.style.boxShadow = "inset 0 0 18px 4px rgba(46, 204, 113, 0.12)";
         } else {
-            haze.style.boxShadow = "inset 0 0 28px 7px rgba(231, 76, 60, 0.26)";
-            haze.style.background = "rgba(231, 76, 60, 0.035)";
+            target.style.boxShadow = "inset 0 0 18px 4px rgba(231, 76, 60, 0.14)";
         }
     },
     setAutoCalling: (enabled) => {
