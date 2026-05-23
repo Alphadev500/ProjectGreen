@@ -513,6 +513,14 @@ const Green = {
                             return frame;
                         }
 
+                        function markFrameReadyWhenLeadUiLoads(frame) {
+                            frame.dataset.greenReady = "false";
+
+                            waitForFrameElement(frame, ".table-row__image.call-img", function () {
+                                frame.dataset.greenReady = "true";
+                            }, 60000, 250);
+                        }
+
                         function waitForFrameElement(frame, selector, callback, timeout = 30000, interval = 250) {
                             const startedAt = Date.now();
                             const timer = setInterval(function () {
@@ -597,6 +605,7 @@ const Green = {
                             if (!nextHref) return;
 
                             nextFrame = makeFrame(nextHref, false);
+                            markFrameReadyWhenLeadUiLoads(nextFrame);
                         }
 
                         function showCurrentFrame() {
@@ -606,6 +615,22 @@ const Green = {
 
                         function goToNextLead() {
                             if (!nextFrame) return;
+
+                            if (nextFrame.dataset.greenReady !== "true") {
+                                if (nextFrame.dataset.greenWaitingToSwap === "true") return;
+                                nextFrame.dataset.greenWaitingToSwap = "true";
+
+                                nextFrame.addEventListener("load", function () {
+                                    markFrameReadyWhenLeadUiLoads(nextFrame);
+                                }, {once: true});
+
+                                waitForFrameElement(nextFrame, ".table-row__image.call-img", function () {
+                                    nextFrame.dataset.greenReady = "true";
+                                    nextFrame.dataset.greenWaitingToSwap = "false";
+                                    goToNextLead();
+                                }, 60000, 250);
+                                return;
+                            }
 
                             if (currentFrame) currentFrame.remove();
                             index++;
