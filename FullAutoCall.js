@@ -450,16 +450,42 @@ const Green = {
 
         return true;
     },
+    openNextLeadFromPage: () => {
+        const nextButton = document.querySelector('button.collapse-next, .collapse-next');
+        if (!nextButton) return false;
+
+        const previousLeadId = Green.getCurrentLeadId();
+        nextButton.click();
+        Green.autoCallReady = false;
+
+        let tries = 0;
+        const waitForNextLead = setInterval(() => {
+            tries++;
+
+            const currentLeadId = Green.getCurrentLeadId();
+            if (currentLeadId && currentLeadId != previousLeadId) {
+                clearInterval(waitForNextLead);
+                Green.sendEmailAndCall();
+                return;
+            }
+
+            if (tries >= 60) {
+                clearInterval(waitForNextLead);
+            }
+        }, 500);
+
+        return true;
+    },
     openNextQueuedLead: () => {
         const queue = Green.getLeadQueue();
-        if (!queue) return false;
+        if (!queue) return Green.openNextLeadFromPage();
 
         const nextIndex = queue.index + 1;
         const nextHref = Green.resolveLeadHref(queue.hrefs[nextIndex]);
 
         if (!nextHref) {
             localStorage.removeItem("greenLeadQueue");
-            return false;
+            return Green.openNextLeadFromPage();
         }
 
         queue.index = nextIndex;
