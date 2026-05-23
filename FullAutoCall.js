@@ -317,6 +317,7 @@ const Green = {
         Green.autoCallNextLeadTimer = setTimeout(tryCall, 25);
     },
     tryAutoCallNextLead: (signal) => {
+        if (window.parent && window.parent !== window) return false;
         if (!Green.autoCallLeads) return false;
         if (!Green.autoCallReady) return false;
 
@@ -446,7 +447,215 @@ const Green = {
 
         Green.saveLeadQueue(queue);
         Green.prefetchQueuedLead(1);
-        window.open(queue.hrefs[0], "green-auto-lead");
+        return Green.openLeadIframeRunner(queue.hrefs);
+    },
+    openLeadIframeRunner: (hrefs) => {
+        const runner = window.open("", "green-auto-lead");
+        if (!runner) return false;
+
+        const runnerHtml = `
+            <!doctype html>
+            <html>
+            <head>
+                <title>Green Auto Lead Runner</title>
+                <style>
+                    html, body {
+                        width: 100%;
+                        height: 100%;
+                        margin: 0;
+                        overflow: hidden;
+                        background: #111;
+                    }
+
+                    iframe {
+                        position: fixed;
+                        inset: 0;
+                        width: 100%;
+                        height: 100%;
+                        border: 0;
+                        background: white;
+                    }
+
+                    iframe.green-hidden-lead {
+                        opacity: 0;
+                        pointer-events: none;
+                        z-index: 1;
+                    }
+
+                    iframe.green-visible-lead {
+                        opacity: 1;
+                        pointer-events: auto;
+                        z-index: 2;
+                    }
+                </style>
+            </head>
+            <body>
+                <script>
+                    (function () {
+                        const hrefs = ${JSON.stringify(hrefs)};
+                        let index = 0;
+                        let currentFrame = null;
+                        let nextFrame = null;
+                        let callStartedFor = null;
+
+                        window.GreenIframeRunner = true;
+
+                        function makeFrame(src, visible) {
+                            const frame = document.createElement("iframe");
+                            frame.src = src;
+                            frame.className = visible ? "green-visible-lead" : "green-hidden-lead";
+                            frame.addEventListener("load", function () {
+                                if (frame === currentFrame) {
+                                    startCallingWhenReady(frame);
+                                }
+                            });
+                            document.body.appendChild(frame);
+                            return frame;
+                        }
+
+                        function waitForFrameElement(frame, selector, callback, timeout = 30000, interval = 250) {
+                            const startedAt = Date.now();
+                            const timer = setInterval(function () {
+                                let element = null;
+
+                                try {
+                                    element = frame.contentDocument && frame.contentDocument.querySelector(selector);
+                                } catch (e) {
+                                    clearInterval(timer);
+                                    return;
+                                }
+
+                                if (element) {
+                                    clearInterval(timer);
+                                    callback(element);
+                                    return;
+                                }
+
+                                if (Date.now() - startedAt >= timeout) {
+                                    clearInterval(timer);
+                                }
+                            }, interval);
+                        }
+
+                        function clickFrameActivityTab(frame, callback) {
+                            let completed = false;
+                            const done = function () {
+                                if (completed) return;
+                                completed = true;
+                                if (callback) callback();
+                            };
+
+                            waitForFrameElement(frame, ".main-tabsNav .tab-item", function () {
+                                try {
+                                    const activityTab = Array.from(frame.contentDocument.querySelectorAll(".main-tabsNav .tab-item"))
+                                        .find(function (item) {
+                                            return (item.innerText || "").trim() === "Activity";
+                                        });
+
+                                    if (activityTab) {
+                                        activityTab.click();
+                                    }
+                                } catch (e) {}
+
+                                done();
+                            }, 10000, 100);
+
+                            setTimeout(done, 1500);
+                        }
+
+                        function startCallingWhenReady(frame) {
+                            const src = frame.src;
+                            if (callStartedFor === src) return;
+                            callStartedFor = src;
+
+                            setTimeout(function () {
+                                clickFrameActivityTab(frame, function () {
+                                    try {
+                                        if (
+                                            frame.contentWindow.Green &&
+                                            frame.contentWindow.Green.sendEmailAndCall &&
+                                            !frame.contentWindow.Green.autoCallReady
+                                        ) {
+                                            frame.contentWindow.Green.sendEmailAndCall();
+                                        }
+                                    } catch (e) {}
+
+                                    waitForFrameElement(frame, ".table-row__image.call-img", function (callButton) {
+                                        setTimeout(function () {
+                                            callButton.click();
+                                        }, 500);
+                                    });
+                                });
+                            }, 500);
+                        }
+
+                        function preloadNext() {
+                            if (nextFrame) nextFrame.remove();
+                            nextFrame = null;
+
+                            const nextHref = hrefs[index + 1];
+                            if (!nextHref) return;
+
+                            nextFrame = makeFrame(nextHref, false);
+                        }
+
+                        function showCurrentFrame() {
+                            currentFrame = makeFrame(hrefs[index], true);
+                            preloadNext();
+                        }
+
+                        function goToNextLead() {
+                            if (!nextFrame) return;
+
+                            if (currentFrame) currentFrame.remove();
+                            index++;
+                            localStorage.setItem("greenLeadQueue", JSON.stringify({
+                                hrefs: hrefs,
+                                index: index,
+                                createdAt: Date.now()
+                            }));
+
+                            currentFrame = nextFrame;
+                            nextFrame = null;
+                            callStartedFor = null;
+                            currentFrame.className = "green-visible-lead";
+                            startCallingWhenReady(currentFrame);
+                            preloadNext();
+                        }
+
+                        window.addEventListener("storage", function (event) {
+                            if (event.key !== "user" || !event.newValue) return;
+
+                            try {
+                                const content = JSON.parse(event.newValue);
+                                if (content.status === "close") {
+                                    goToNextLead();
+                                }
+                            } catch (e) {}
+                        });
+
+                        window.addEventListener("message", function (event) {
+                            if (!event.data || event.data.type !== "greenLeadClosed") return;
+                            goToNextLead();
+                        });
+
+                        localStorage.setItem("greenLeadQueue", JSON.stringify({
+                            hrefs: hrefs,
+                            index: index,
+                            createdAt: Date.now()
+                        }));
+
+                        showCurrentFrame();
+                    })();
+                <\/script>
+            </body>
+            </html>
+        `;
+
+        runner.document.open();
+        runner.document.write(runnerHtml);
+        runner.document.close();
+        runner.focus();
 
         return true;
     },
@@ -477,6 +686,13 @@ const Green = {
         return true;
     },
     openNextQueuedLead: () => {
+        if (window.parent && window.parent !== window) {
+            try {
+                window.parent.postMessage({type: "greenLeadClosed"}, "*");
+                return true;
+            } catch (e) {}
+        }
+
         const queue = Green.getLeadQueue();
         if (!queue) return Green.openNextLeadFromPage();
 
