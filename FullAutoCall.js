@@ -457,7 +457,7 @@ const Green = {
             <!doctype html>
             <html>
             <head>
-                <title>Green Auto Lead Runner</title>
+                <title>Call Center -List Item...</title>
                 <style>
                     html, body {
                         width: 100%;
@@ -497,6 +497,8 @@ const Green = {
                         let currentFrame = null;
                         let nextFrame = null;
                         let callStartedFor = null;
+                        let isAdvancing = false;
+                        const handledCloseKeys = {};
 
                         window.GreenIframeRunner = true;
 
@@ -613,11 +615,22 @@ const Green = {
                             preloadNext();
                         }
 
+                        function handleLeadClosed(closeKey) {
+                            if (closeKey) {
+                                if (handledCloseKeys[closeKey]) return;
+                                handledCloseKeys[closeKey] = true;
+                            }
+
+                            goToNextLead();
+                        }
+
                         function goToNextLead() {
                             if (!nextFrame) return;
 
                             if (nextFrame.dataset.greenReady !== "true") {
                                 if (nextFrame.dataset.greenWaitingToSwap === "true") return;
+                                if (isAdvancing) return;
+                                isAdvancing = true;
                                 nextFrame.dataset.greenWaitingToSwap = "true";
 
                                 nextFrame.addEventListener("load", function () {
@@ -627,10 +640,14 @@ const Green = {
                                 waitForFrameElement(nextFrame, ".table-row__image.call-img", function () {
                                     nextFrame.dataset.greenReady = "true";
                                     nextFrame.dataset.greenWaitingToSwap = "false";
+                                    isAdvancing = false;
                                     goToNextLead();
                                 }, 60000, 250);
                                 return;
                             }
+
+                            if (isAdvancing) return;
+                            isAdvancing = true;
 
                             if (currentFrame) currentFrame.remove();
                             index++;
@@ -646,6 +663,10 @@ const Green = {
                             currentFrame.className = "green-visible-lead";
                             startCallingWhenReady(currentFrame);
                             preloadNext();
+
+                            setTimeout(function () {
+                                isAdvancing = false;
+                            }, 1000);
                         }
 
                         window.addEventListener("storage", function (event) {
@@ -654,14 +675,14 @@ const Green = {
                             try {
                                 const content = JSON.parse(event.newValue);
                                 if (content.status === "close") {
-                                    goToNextLead();
+                                    handleLeadClosed(content.userId + ":" + content.closedAt);
                                 }
                             } catch (e) {}
                         });
 
                         window.addEventListener("message", function (event) {
                             if (!event.data || event.data.type !== "greenLeadClosed") return;
-                            goToNextLead();
+                            handleLeadClosed(event.data.closeKey);
                         });
 
                         localStorage.setItem("greenLeadQueue", JSON.stringify({
@@ -713,7 +734,13 @@ const Green = {
     openNextQueuedLead: () => {
         if (window.parent && window.parent !== window) {
             try {
-                window.parent.postMessage({type: "greenLeadClosed"}, "*");
+                const user = JSON.parse(localStorage.getItem("user") || "null");
+                const closeKey = user && user.userId ? user.userId + ":" + user.closedAt : null;
+
+                window.parent.postMessage({
+                    type: "greenLeadClosed",
+                    closeKey: closeKey
+                }, "*");
                 return true;
             } catch (e) {}
         }
