@@ -1,10 +1,13 @@
 function setCallAsEnded () {
+    let closedUser = false;
+
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key !== "user") continue;
 
         let currentContent = localStorage.getItem(key);
         currentContent = JSON.parse(currentContent);
+        closedUser = true;
 
         localStorage.setItem("autoCallNextLead",
             JSON.stringify({
@@ -20,6 +23,12 @@ function setCallAsEnded () {
                 closedAt: Date.now()
             })
         );
+    }
+
+    if (!closedUser) {
+        localStorage.setItem("greenCallEnded", JSON.stringify({
+            createdAt: Date.now()
+        }));
     }
 }
 

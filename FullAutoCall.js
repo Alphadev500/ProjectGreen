@@ -670,6 +670,11 @@ const Green = {
                         }
 
                         window.addEventListener("storage", function (event) {
+                            if (event.key === "greenCallEnded" && event.newValue) {
+                                handleLeadClosed(event.newValue);
+                                return;
+                            }
+
                             if (event.key !== "user" || !event.newValue) return;
 
                             try {
@@ -783,7 +788,15 @@ const Green = {
     initOnConfirm: () => {
         //let intervalID = setInterval(() => {
             Green.callIconClick(() => {
-                let talk = document.querySelectorAll('.table-content')[2].querySelectorAll('.table-row')[6].querySelector('.value-input-text').innerText;
+                saveAndCloseLeedsPage();
+
+                let talk = "";
+                try {
+                    const table = document.querySelectorAll('.table-content')[2];
+                    const row = table && table.querySelectorAll('.table-row')[6];
+                    const value = row && row.querySelector('.value-input-text');
+                    talk = value ? value.innerText : "";
+                } catch (e) {}
 
                 if (talk == 'Yes') {
                     Green.ifElementExists('.el-button.el-button--danger', () => {
@@ -799,7 +812,6 @@ const Green = {
                     // });
                 }
 
-                saveAndCloseLeedsPage();
                 if (Green.sendEmail == true) {
                     Green.setTimeout(() => {
                         sendEmail();
