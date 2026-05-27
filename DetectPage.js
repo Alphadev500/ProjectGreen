@@ -6,7 +6,11 @@ function DetectPage (callback) {
                 Green.page = "Lead";
                 clearInterval(intervalID);
                 Green.sendEmailAndCall();
-            } else if (document.querySelector('.page-holder .wrapper .connect span') !== null) {
+            } else if (
+                document.querySelector('.page-holder .wrapper .connect span') !== null ||
+                document.querySelector('.block-btn-call') !== null ||
+                document.querySelector('.timer') !== null
+            ) {
                 localStorage.removeItem("userFTD");
                 Green.page = "Call";
                 clearInterval(intervalID);

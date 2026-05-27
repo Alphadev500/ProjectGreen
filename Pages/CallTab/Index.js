@@ -24,25 +24,44 @@ function setCallAsEnded () {
 }
 
 function userAnswered () {
-    let innerText = document.querySelector('.status-call-start').innerText;
+    const status = document.querySelector('.status-call-start');
+    const innerText = status ? status.innerText : "";
 
-    if (innerText == "The customer picked up the phone.") return true;
+    if (innerText.toLowerCase().includes("picked up")) return true;
 
     return false;
 }
 
 function getProperTime (timeString)  {
-    const parts = timeString.split(":");
+    const parts = (timeString || "")
+        .trim()
+        .split(":")
+        .map((part) => parseInt(part, 10))
+        .filter((part) => !Number.isNaN(part));
 
-    const hours = parseInt(parts[0], 10);
-    const minutes = parseInt(parts[1], 10);
-    const seconds = parseInt(parts[2], 10);
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
 
-    return {hours, minutes, seconds}
+    if (parts.length === 3) {
+        hours = parts[0];
+        minutes = parts[1];
+        seconds = parts[2];
+    } else if (parts.length === 2) {
+        minutes = parts[0];
+        seconds = parts[1];
+    } else if (parts.length === 1) {
+        seconds = parts[0];
+    }
+
+    const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+
+    return {hours, minutes, seconds, totalSeconds}
 }
 
 function getCallTabTimer () {
-    return document.querySelector('.timer').innerText;
+    const timer = document.querySelector('.timer');
+    return timer ? timer.innerText : "";
 }
 
 function hengUpButton () {
@@ -50,7 +69,11 @@ function hengUpButton () {
 }
 
 function hengUp () {
-    hengUpButton().click();
+    const button = hengUpButton();
+    if (!button) return false;
+
+    button.click();
+    return true;
 }
 
 function closeLeadAfterHengUp () {
@@ -81,6 +104,7 @@ function actOnChangeRightShiftClickHengUp () {
 function saveOnHengUp () {
     try {
         const button = hengUpButton();
+        if (!button) return;
         if (button.dataset.greenHengUpBound === "true") return;
 
         button.dataset.greenHengUpBound = "true";
@@ -97,20 +121,31 @@ function callCanselDetect () {
     saveOnHengUp();
     let timeOnHold = getCallTabTimer();
     let properTime = getProperTime(timeOnHold);
-    if (timeOnHold.trim().length != 0) {
+    const hasTimer = timeOnHold.includes(":") && properTime.totalSeconds >= 0;
+
+    if (hasTimer) {
         Green.onCall = true;
+        Green.lastCallSeconds = properTime.totalSeconds;
     }
 
     if (localStorage.getItem("user") != null && Green.onCall) {
-        if (properTime.minutes >= 2) localStorage.setItem('userFTD', true);
+        if ((Green.lastCallSeconds || 0) >= 120) localStorage.setItem('userFTD', true);
 
-        if (timeOnHold == '' && !localStorage.getItem('userFTD')  && Green.onCall == true) {
+        if (!hasTimer && Green.onCall == true) {
             Green.onCall = false;
-            setCallAsEnded();
+            Green.autoHengupTriggered = false;
+            if (!localStorage.getItem('userFTD')) setCallAsEnded();
         }
 
-        if (!userAnswered() && properTime.seconds === Green.getRandomIntervalNumber()) hengUp();
+        const maxSeconds = Number(Green.getRandomIntervalNumber()) || 35;
+        if (hasTimer && !userAnswered() && properTime.totalSeconds >= maxSeconds && !Green.autoHengupTriggered) {
+            Green.autoHengupTriggered = hengUp();
+        }
 
+    }
+
+    if (!hasTimer && !Green.onCall) {
+        Green.autoHengupTriggered = false;
     }
 }
 
@@ -133,8 +168,8 @@ function callTab ()  {
     }, 1000);
 
     setInterval(() => {
-        let buttons = document.querySelector('.el-button.el-button--success span').innerHTML;
-        if (buttons.innerHTML !== "Enable sound playback") answer();
+        const button = document.querySelector('.el-button.el-button--success span');
+        if (button && button.innerHTML !== "Enable sound playback") answer();
 
     }, 1000);
 }
