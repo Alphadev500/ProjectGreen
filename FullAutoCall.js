@@ -231,7 +231,7 @@ const Green = {
         });
     },
     callIconClick: (callback=null) => {
-        Green.ifElementExists('.table-row__image.call-img', (callButton) => {
+        Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
             callButton.addEventListener("click", callback);
             Green.autoCallReady = true;
 
@@ -283,10 +283,10 @@ const Green = {
         });
     },
     clickCallAndConfirm: () => {
-        const callButton = document.querySelector('.table-row__image.call-img');
+        const callButton = document.querySelector('.call-img.mr-2.pointer');
         if (!callButton) return;
 
-        Green.ifElementExists('.table-row__image.call-img', () => {
+        Green.ifElementExists('.call-img.mr-2.pointer', () => {
             callButton.click();
         });
     },
@@ -351,7 +351,7 @@ const Green = {
             createdAt: Date.now()
         }));
 
-        Green.ifElementExists('.table-row__image.call-img', (callButton) => {
+        Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
             const latestClaim = JSON.parse(localStorage.getItem("autoCallNextLeadClaim") || "null");
             if (!latestClaim || latestClaim.userId != currentLeadId) return;
 
@@ -518,7 +518,7 @@ const Green = {
                         function markFrameReadyWhenLeadUiLoads(frame) {
                             frame.dataset.greenReady = "false";
 
-                            waitForFrameElement(frame, ".table-row__image.call-img", function () {
+                            waitForFrameElement(frame, ".call-img.mr-2.pointer", function () {
                                 frame.dataset.greenReady = "true";
                             }, 60000, 250);
                         }
@@ -590,7 +590,7 @@ const Green = {
                                         }
                                     } catch (e) {}
 
-                                    waitForFrameElement(frame, ".table-row__image.call-img", function (callButton) {
+                                    waitForFrameElement(frame, ".call-img.mr-2.pointer", function (callButton) {
                                         setTimeout(function () {
                                             callButton.click();
                                         }, 500);
@@ -637,7 +637,7 @@ const Green = {
                                     markFrameReadyWhenLeadUiLoads(nextFrame);
                                 }, {once: true});
 
-                                waitForFrameElement(nextFrame, ".table-row__image.call-img", function () {
+                                waitForFrameElement(nextFrame, ".call-img.mr-2.pointer", function () {
                                     nextFrame.dataset.greenReady = "true";
                                     nextFrame.dataset.greenWaitingToSwap = "false";
                                     isAdvancing = false;
@@ -834,7 +834,7 @@ Green.init();
 
 // clicks: {
 //     phoneIcon: () => {
-//         document.querySelector('.table-row__image.call-img').click();
+//         document.querySelector('.call-img.mr-2.pointer').click();
 //     },
 //     refusedCall: (callback) => {
 //         try {
