@@ -158,7 +158,7 @@ const Green = {
             if (callback) {
                 // This is the call Icon on the man page of the lead
                 console.log('loaded');
-                document.querySelector('.table-row__image.call-img').addEventListener("click", callback);
+                document.querySelector('.call-img.mr-2.pointer').addEventListener("click", callback);
             }
         });
     },
@@ -172,7 +172,7 @@ const Green = {
     },
     autoConfirmCallDialog: () => {},
     clickCallAndConfirm: () => {
-        const callButton = document.querySelector('.table-row__image.call-img');
+        const callButton = document.querySelector('.call-img.mr-2.pointer');
         if (!callButton) return;
 
         callButton.click();
@@ -183,7 +183,7 @@ const Green = {
             const target = event.target;
             if (!target || !target.closest) return;
 
-            if (target.closest('.table-row__image.call-img')) {
+            if (target.closest('.call-img.mr-2.pointer')) {
                 Green.autoConfirmCallDialog();
             }
         };
@@ -263,7 +263,7 @@ Green.init();
 
 // clicks: {
 //     phoneIcon: () => {
-//         document.querySelector('.table-row__image.call-img').click();
+//         document.querySelector('.call-img.mr-2.pointer').click();
 //     },
 //     refusedCall: (callback) => {
 //         try {

@@ -79,7 +79,7 @@
         },
 
         startCallSequence() {
-            let callImg = document.querySelector('.table-row__image.call-img');
+            let callImg = document.querySelector('.call-img.mr-2.pointer');
             if (callImg) {
                 callImg.click();
                 setTimeout(() => {
