@@ -262,8 +262,8 @@
     }
 
     async function initGreenLoader() {
-        //const isAuthorized = await authorizeGreenLoader();
-        //if (!isAuthorized) return;
+        const isAuthorized = await authorizeGreenLoader();
+        if (!isAuthorized) return;
         CRM.init();
     }
 
