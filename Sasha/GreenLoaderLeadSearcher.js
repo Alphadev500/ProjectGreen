@@ -79,9 +79,9 @@
         },
 
         startCallSequence() {
-            let callImg = document.querySelector('.call-img.mr-2.pointer');
-            if (callImg) {
-                callImg.click();
+            //let callImg = document.querySelector('.call-img.mr-2.pointer');
+            //if (callImg) {
+            //    callImg.click();
                 setTimeout(() => {
                     let dangerBtn = document.querySelector('.el-button.el-button--danger');
                     if (dangerBtn) dangerBtn.click();
@@ -90,7 +90,7 @@
                         if (successBtn) successBtn.click();
                     }, 500);
                 }, 500);
-            }
+            //}
         },
 
         // ==========================================
