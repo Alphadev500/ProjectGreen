@@ -170,6 +170,33 @@ const Green = {
             }
         });
     },
+    waitForCallButton: (callback, timeout=5000) => {
+        const selector = '.call-img.mr-2.pointer';
+        const callButton = document.querySelector(selector);
+
+        if (callButton) {
+            callback(callButton);
+            return;
+        }
+
+        const observer = new MutationObserver(() => {
+            const callButton = document.querySelector(selector);
+            if (!callButton) return;
+
+            observer.disconnect();
+            clearTimeout(timeoutId);
+            callback(callButton);
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        const timeoutId = setTimeout(() => {
+            observer.disconnect();
+        }, timeout);
+    },
     autoConfirmCallDialog: () => {
         if (Green.callConfirmWatcherActive) return;
         Green.callConfirmWatcherActive = true;
@@ -191,7 +218,8 @@ const Green = {
 
             if (!hasCarouselInDom()) {
                 const callButton = document.querySelector('.call-img.mr-2.pointer');
-                if (callButton) callButton.click();
+                if (!callButton) return false;
+                callButton.click();
             }
 
             return true;
@@ -220,11 +248,10 @@ const Green = {
         }, 5000);
     },
     clickCallAndConfirm: () => {
-        const callButton = document.querySelector('.call-img.mr-2.pointer');
-        if (!callButton) return;
-
-        callButton.click();
-        Green.autoConfirmCallDialog();
+        Green.waitForCallButton((callButton) => {
+            callButton.click();
+            Green.autoConfirmCallDialog();
+        });
     },
     bindCallImageConfirm: () => {
         const trigger = (event) => {
