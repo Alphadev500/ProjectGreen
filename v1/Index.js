@@ -213,25 +213,26 @@ const Green = {
             return pageHtml.includes('carousel');
         };
 
-        const clickCallIconIfNeeded = () => {
-            if (!getConfirmDialog()) return false;
+        const clickConfirmYesIfNeeded = () => {
+            const confirmDialog = getConfirmDialog();
+            if (!confirmDialog) return false;
 
             if (!hasCarouselInDom()) {
-                const callButton = document.querySelector('.call-img.mr-2.pointer');
-                if (!callButton) return false;
-                callButton.click();
+                const yesButton = confirmDialog.querySelector('.el-button.el-button--success.mt-4');
+                if (!yesButton) return false;
+                yesButton.click();
             }
 
             return true;
         };
 
-        if (clickCallIconIfNeeded()) {
+        if (clickConfirmYesIfNeeded()) {
             Green.callConfirmWatcherActive = false;
             return;
         }
 
         const observer = new MutationObserver(() => {
-            if (!clickCallIconIfNeeded()) return;
+            if (!clickConfirmYesIfNeeded()) return;
 
             observer.disconnect();
             Green.callConfirmWatcherActive = false;
