@@ -17,6 +17,7 @@
         wasOnCall: false,
         callConfirmWatcherActive: false,
         confirmCallYesClicked: false,
+        refuseToTalkYesClicked: false,
 
         init() {
             this.detectPage();
@@ -90,6 +91,7 @@
 
         startCallSequence() {
             this.confirmCallYesClicked = false;
+            this.refuseToTalkYesClicked = false;
 
             this.waitForElement('.call-img.mr-2.pointer', (callImg) => {
                 callImg.click();
@@ -156,6 +158,10 @@
             };
 
             const clickRefuseToTalkYesIfNeeded = () => {
+                if (this.refuseToTalkYesClicked) {
+                    return false;
+                }
+
                 const refuseToTalkDialog = getRefuseToTalkDialog();
                 if (!refuseToTalkDialog) {
                     return false;
@@ -173,13 +179,12 @@
                 }
 
                 yesCallButton.click();
-                return true;
+                this.refuseToTalkYesClicked = true;
+                return false;
             };
 
             const clickConfirmYesIfNeeded = () => {
-                if (clickRefuseToTalkYesIfNeeded()) {
-                    return true;
-                }
+                clickRefuseToTalkYesIfNeeded();
 
                 const confirmDialog = getConfirmDialog();
                 if (!confirmDialog) {
