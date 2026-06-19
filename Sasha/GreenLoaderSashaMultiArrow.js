@@ -144,12 +144,43 @@
                 });
             };
 
+            const getRefuseToTalkDialog = () => {
+                return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
+                    return dialog.textContent.toLowerCase().includes('refuse to talk');
+                });
+            };
+
             const hasCaruselInDom = () => {
                 const pageHtml = document.documentElement.outerHTML.toLowerCase();
                 return pageHtml.includes('carusel') || pageHtml.includes('carousel');
             };
 
+            const clickRefuseToTalkYesIfNeeded = () => {
+                const refuseToTalkDialog = getRefuseToTalkDialog();
+                if (!refuseToTalkDialog) {
+                    return false;
+                }
+
+                const yesCallButton = Array.from(refuseToTalkDialog.querySelectorAll('.el-button.el-button--danger')).find((button) => {
+                    const buttonText = button.textContent.trim().toLowerCase();
+                    const isDisabled = button.getAttribute('aria-disabled') === 'true' || button.disabled;
+
+                    return buttonText === 'yes, call' && !isDisabled;
+                });
+
+                if (!yesCallButton) {
+                    return false;
+                }
+
+                yesCallButton.click();
+                return true;
+            };
+
             const clickConfirmYesIfNeeded = () => {
+                if (clickRefuseToTalkYesIfNeeded()) {
+                    return true;
+                }
+
                 const confirmDialog = getConfirmDialog();
                 if (!confirmDialog) {
                     return false;
