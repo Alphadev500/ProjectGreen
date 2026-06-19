@@ -11,6 +11,8 @@
 (function() {
     'use strict';
 
+    console.log('GreenLoader: script loaded');
+
     const CRM = {
         pageType: null,
         currentCallSeconds: 0, // Save amount of the sec.
@@ -19,19 +21,23 @@
         confirmCallYesClicked: false,
 
         init() {
+            console.log('GreenLoader: CRM init');
             this.detectPage();
             this.initHotkeys();
         },
 
         // 1. Realizw wht is the page
         detectPage() {
+            console.log('GreenLoader: detectPage started');
             const interval = setInterval(() => {
                 if (document.querySelector(".player-title")) {
                     this.pageType = "LEAD";
+                    console.log('GreenLoader: page detected as LEAD');
                     this.initLeadLogic();
                     clearInterval(interval);
                 } else if (document.querySelector('.page-holder .wrapper .connect span') || document.querySelector('.block-btn-call') || document.querySelector('.timer')) {
                     this.pageType = "CALL";
+                    console.log('GreenLoader: page detected as CALL');
                     this.initCallLogic();
                     clearInterval(interval);
                 }
@@ -40,13 +46,22 @@
 
         // 2. HOT KEY
         initHotkeys() {
+            console.log('GreenLoader: hotkeys initialized');
             document.addEventListener('keydown', (e) => {
                 // If you write the comment - don't react
-                if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+                if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+                    console.log(`GreenLoader: ignored key ${e.key} because target is ${e.target.tagName}`);
+                    return;
+                }
 
                 if (e.key === 'ArrowUp') {
+                    console.log(`GreenLoader: ArrowUp pressed, pageType=${this.pageType}`);
                     e.preventDefault();
-                    if (this.pageType === "LEAD") this.startCallSequence();
+                    if (this.pageType === "LEAD") {
+                        this.startCallSequence();
+                    } else {
+                        console.log('GreenLoader: ArrowUp ignored because page is not LEAD');
+                    }
                 }
 
                 if (e.key === 'ArrowDown') {
@@ -355,13 +370,18 @@
     }
 
     async function authorizeGreenLoader() {
+        console.log('GreenLoader: authorization started');
         const agentName = await waitForAgentName();
+        console.log('GreenLoader: agent name result', agentName);
+
         if (!agentName) {
+            console.log('GreenLoader: authorization stopped, agent name not found');
             showNotAuthorizedMessage("Not authorized: Agent name not found");
             return false;
         }
 
         try {
+            console.log('GreenLoader: sending authorization request');
             const response = await fetch("https://alphadev.space/Green/GreenAutoEmailV2/AutoEmailM/API/autoStatusCalls.php", {
                 method: "POST",
                 headers: {
@@ -373,8 +393,14 @@
             });
 
             const data = await response.json();
-            if (Number(data?.status) === 1) return true;
+            console.log('GreenLoader: authorization response', data);
 
+            if (Number(data?.status) === 1) {
+                console.log('GreenLoader: authorization success');
+                return true;
+            }
+
+            console.log('GreenLoader: authorization failed by API status');
             showNotAuthorizedMessage("Not authorized");
             return false;
         } catch (error) {
@@ -385,11 +411,19 @@
     }
 
     async function initGreenLoader() {
+        console.log('GreenLoader: initGreenLoader called');
         const isAuthorized = await authorizeGreenLoader();
-        if (!isAuthorized) return;
+        console.log('GreenLoader: isAuthorized', isAuthorized);
+
+        if (!isAuthorized) {
+            console.log('GreenLoader: CRM init skipped because authorization failed');
+            return;
+        }
+
         CRM.init();
     }
 
     // Запуск
+    console.log('GreenLoader: calling initGreenLoader');
     initGreenLoader();
 })();
