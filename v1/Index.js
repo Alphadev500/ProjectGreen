@@ -170,7 +170,55 @@ const Green = {
             }
         });
     },
-    autoConfirmCallDialog: () => {},
+    autoConfirmCallDialog: () => {
+        if (Green.callConfirmWatcherActive) return;
+        Green.callConfirmWatcherActive = true;
+
+        const getConfirmDialog = () => {
+            return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
+                const title = dialog.querySelector('.el-dialog__title');
+                return title && title.textContent.trim().toLowerCase() === 'confirm call';
+            });
+        };
+
+        const hasCarouselInDom = () => {
+            const pageHtml = document.documentElement.outerHTML.toLowerCase();
+            return pageHtml.includes('carousel');
+        };
+
+        const clickCallIconIfNeeded = () => {
+            if (!getConfirmDialog()) return false;
+
+            if (!hasCarouselInDom()) {
+                const callButton = document.querySelector('.call-img.mr-2.pointer');
+                if (callButton) callButton.click();
+            }
+
+            return true;
+        };
+
+        if (clickCallIconIfNeeded()) {
+            Green.callConfirmWatcherActive = false;
+            return;
+        }
+
+        const observer = new MutationObserver(() => {
+            if (!clickCallIconIfNeeded()) return;
+
+            observer.disconnect();
+            Green.callConfirmWatcherActive = false;
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        setTimeout(() => {
+            observer.disconnect();
+            Green.callConfirmWatcherActive = false;
+        }, 5000);
+    },
     clickCallAndConfirm: () => {
         const callButton = document.querySelector('.call-img.mr-2.pointer');
         if (!callButton) return;
