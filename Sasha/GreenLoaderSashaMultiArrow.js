@@ -16,6 +16,7 @@
         currentCallSeconds: 0, // Save amount of the sec.
         wasOnCall: false,
         callConfirmWatcherActive: false,
+        confirmCallYesClicked: false,
 
         init() {
             this.detectPage();
@@ -84,19 +85,39 @@
         },
 
         startCallSequence() {
-            let callImg = document.querySelector('.call-img.mr-2.pointer');
-            if (callImg) {
+            this.confirmCallYesClicked = false;
+
+            this.waitForElement('.call-img.mr-2.pointer', (callImg) => {
                 callImg.click();
                 this.autoConfirmCallDialog();
-                setTimeout(() => {
-                    let dangerBtn = document.querySelector('.el-button.el-button--danger');
-                    if (dangerBtn) dangerBtn.click();
-                    // setTimeout(() => {
-                    //     let successBtn = document.querySelector('.el-button.el-button--success.mt-4');
-                    //     if (successBtn) successBtn.click();
-                    // }, 500);
-                }, 500);
+            });
+        },
+
+        waitForElement(selector, callback, timeout=5000) {
+            const element = document.querySelector(selector);
+            if (element) {
+                callback(element);
+                return;
             }
+
+            const observer = new MutationObserver(() => {
+                const element = document.querySelector(selector);
+                if (!element) return;
+
+                observer.disconnect();
+                clearTimeout(timeoutId);
+                callback(element);
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+
+            const timeoutId = setTimeout(() => {
+                observer.disconnect();
+                console.log(`GreenLoader: timed out waiting for ${selector}`);
+            }, timeout);
         },
 
         autoConfirmCallDialog() {
@@ -117,14 +138,28 @@
 
             const clickConfirmYesIfNeeded = () => {
                 const confirmDialog = getConfirmDialog();
-                if (!confirmDialog) return false;
-
-                if (!hasCarouselInDom()) {
-                    const yesButton = confirmDialog.querySelector('.el-button.el-button--success.mt-4');
-                    if (!yesButton) return false;
-                    yesButton.click();
+                if (!confirmDialog) {
+                    console.log('GreenLoader: waiting for Confirm call dialog');
+                    return false;
                 }
 
+                if (hasCarouselInDom()) {
+                    console.log('GreenLoader: carousel found, not clicking Confirm call Yes');
+                    return true;
+                }
+
+                const yesButton = Array.from(confirmDialog.querySelectorAll('.el-button.el-button--success.mt-4')).find((button) => {
+                    return button.textContent.trim().toLowerCase() === 'yes' && button.getAttribute('aria-disabled') !== 'true';
+                });
+
+                if (!yesButton) {
+                    console.log('GreenLoader: waiting for Confirm call Yes button');
+                    return false;
+                }
+
+                yesButton.click();
+                this.confirmCallYesClicked = true;
+                console.log('GreenLoader: clicked Confirm call Yes');
                 return true;
             };
 
