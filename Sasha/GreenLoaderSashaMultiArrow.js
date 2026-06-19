@@ -126,14 +126,19 @@
 
             const getConfirmDialog = () => {
                 return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
+                    const yesButton = dialog.querySelector('.el-button.el-button--success.mt-4');
+                    if (!yesButton) return false;
+
                     const title = dialog.querySelector('.el-dialog__title');
-                    return title && title.textContent.trim().toLowerCase() === 'confirm call';
+                    if (!title) return true;
+
+                    return title.textContent.trim().toLowerCase() === 'confirm call';
                 });
             };
 
-            const hasCarouselInDom = () => {
+            const hasCaruselInDom = () => {
                 const pageHtml = document.documentElement.outerHTML.toLowerCase();
-                return pageHtml.includes('carousel');
+                return pageHtml.includes('carusel') || pageHtml.includes('carousel');
             };
 
             const clickConfirmYesIfNeeded = () => {
@@ -143,8 +148,8 @@
                     return false;
                 }
 
-                if (hasCarouselInDom()) {
-                    console.log('GreenLoader: carousel found, not clicking Confirm call Yes');
+                if (hasCaruselInDom()) {
+                    console.log('GreenLoader: carusel/carousel found, not clicking Confirm call Yes');
                     return true;
                 }
 
