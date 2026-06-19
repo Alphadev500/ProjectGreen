@@ -6,6 +6,7 @@ const Green = {
     onCall: false,
     page: false,
     callConfirmWatcherActive: false,
+    refuseToTalkYesClicked: false,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
     },
@@ -203,22 +204,58 @@ const Green = {
 
         const getConfirmDialog = () => {
             return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
+                const yesButton = dialog.querySelector('.el-button.el-button--success.mt-4');
+                if (!yesButton) return false;
+
                 const title = dialog.querySelector('.el-dialog__title');
-                return title && title.textContent.trim().toLowerCase() === 'confirm call';
+                if (!title) return true;
+
+                return title.textContent.trim().toLowerCase() === 'confirm call';
             });
         };
 
-        const hasCarouselInDom = () => {
+        const hasCaruselInDom = () => {
             const pageHtml = document.documentElement.outerHTML.toLowerCase();
-            return pageHtml.includes('carousel');
+            return pageHtml.includes('carusel') || pageHtml.includes('carousel');
+        };
+
+        const getRefuseToTalkDialog = () => {
+            return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
+                return dialog.textContent.toLowerCase().includes('refuse to talk');
+            });
+        };
+
+        const clickRefuseToTalkYesIfNeeded = () => {
+            if (Green.refuseToTalkYesClicked) return false;
+
+            const refuseToTalkDialog = getRefuseToTalkDialog();
+            if (!refuseToTalkDialog) return false;
+
+            const yesCallButton = Array.from(refuseToTalkDialog.querySelectorAll('.el-button.el-button--danger')).find((button) => {
+                const buttonText = button.textContent.trim().toLowerCase();
+                const isDisabled = button.getAttribute('aria-disabled') === 'true' || button.disabled;
+
+                return buttonText === 'yes, call' && !isDisabled;
+            });
+
+            if (!yesCallButton) return false;
+
+            yesCallButton.click();
+            Green.refuseToTalkYesClicked = true;
+            return false;
         };
 
         const clickConfirmYesIfNeeded = () => {
+            clickRefuseToTalkYesIfNeeded();
+
             const confirmDialog = getConfirmDialog();
             if (!confirmDialog) return false;
 
-            if (!hasCarouselInDom()) {
-                const yesButton = confirmDialog.querySelector('.el-button.el-button--success.mt-4');
+            if (!hasCaruselInDom()) {
+                const yesButton = Array.from(confirmDialog.querySelectorAll('.el-button.el-button--success.mt-4')).find((button) => {
+                    return button.textContent.trim().toLowerCase() === 'yes' && button.getAttribute('aria-disabled') !== 'true';
+                });
+
                 if (!yesButton) return false;
                 yesButton.click();
             }
@@ -249,6 +286,8 @@ const Green = {
         }, 5000);
     },
     clickCallAndConfirm: () => {
+        Green.refuseToTalkYesClicked = false;
+
         Green.waitForCallButton((callButton) => {
             callButton.click();
             Green.autoConfirmCallDialog();
@@ -260,6 +299,7 @@ const Green = {
             if (!target || !target.closest) return;
 
             if (target.closest('.call-img.mr-2.pointer')) {
+                Green.refuseToTalkYesClicked = false;
                 Green.autoConfirmCallDialog();
             }
         };

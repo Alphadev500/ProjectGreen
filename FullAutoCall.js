@@ -7,6 +7,7 @@ const Green = {
     onCall: false,
     page: false,
     callConfirmWatcherActive: false,
+    refuseToTalkYesClicked: false,
     autoCallReady: false,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
@@ -283,12 +284,102 @@ const Green = {
         });
     },
     clickCallAndConfirm: () => {
-        const callButton = document.querySelector('.call-img.mr-2.pointer');
-        if (!callButton) return;
+        Green.refuseToTalkYesClicked = false;
 
-        Green.ifElementExists('.call-img.mr-2.pointer', () => {
+        Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
             callButton.click();
+            Green.autoConfirmCallDialog();
         });
+    },
+    autoConfirmCallDialog: () => {
+        if (Green.callConfirmWatcherActive) return;
+        Green.callConfirmWatcherActive = true;
+
+        const getConfirmDialog = () => {
+            return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
+                const title = dialog.querySelector('.el-dialog__title');
+                const titleText = title ? title.textContent.trim().toLowerCase() : '';
+                const hasCallConfirmContent = !!dialog.querySelector('.call-confirm');
+
+                if (!title) return hasCallConfirmContent;
+
+                return titleText === 'confirm call';
+            });
+        };
+
+        const getRefuseToTalkDialog = () => {
+            return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
+                return dialog.textContent.toLowerCase().includes('refuse to talk');
+            });
+        };
+
+        const hasCaruselInDom = () => {
+            const pageHtml = document.documentElement.outerHTML.toLowerCase();
+            return pageHtml.includes('carusel') || pageHtml.includes('carousel');
+        };
+
+        const clickRefuseToTalkYesIfNeeded = () => {
+            if (Green.refuseToTalkYesClicked) return false;
+
+            const refuseToTalkDialog = getRefuseToTalkDialog();
+            if (!refuseToTalkDialog) return false;
+
+            const yesCallButton = Array.from(refuseToTalkDialog.querySelectorAll('.el-button.el-button--danger')).find((button) => {
+                const buttonText = button.textContent.trim().toLowerCase();
+                const isDisabled = button.getAttribute('aria-disabled') === 'true' || button.disabled;
+
+                return buttonText === 'yes, call' && !isDisabled;
+            });
+
+            if (!yesCallButton) return false;
+
+            yesCallButton.click();
+            Green.refuseToTalkYesClicked = true;
+            return false;
+        };
+
+        const clickConfirmYesIfNeeded = () => {
+            clickRefuseToTalkYesIfNeeded();
+
+            const confirmDialog = getConfirmDialog();
+            if (!confirmDialog) return false;
+
+            if (hasCaruselInDom()) return true;
+
+            const yesButton = Array.from(confirmDialog.querySelectorAll('.el-button.el-button--success.mt-4')).find((button) => {
+                const buttonText = button.textContent.trim().toLowerCase();
+                const isDisabled = button.getAttribute('aria-disabled') === 'true' || button.disabled;
+
+                return buttonText === 'yes' && !isDisabled;
+            });
+
+            if (!yesButton) return false;
+
+            yesButton.click();
+            return true;
+        };
+
+        if (clickConfirmYesIfNeeded()) {
+            Green.callConfirmWatcherActive = false;
+            return;
+        }
+
+        const observer = new MutationObserver(() => {
+            if (!clickConfirmYesIfNeeded()) return;
+
+            observer.disconnect();
+            Green.callConfirmWatcherActive = false;
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        setTimeout(() => {
+            observer.disconnect();
+            Green.callConfirmWatcherActive = false;
+        }, 5000);
     },
     getCurrentLeadId: () => {
         try {
@@ -355,7 +446,9 @@ const Green = {
             const latestClaim = JSON.parse(localStorage.getItem("autoCallNextLeadClaim") || "null");
             if (!latestClaim || latestClaim.userId != currentLeadId) return;
 
+            Green.refuseToTalkYesClicked = false;
             callButton.click();
+            Green.autoConfirmCallDialog();
             localStorage.removeItem("autoCallNextLeadClaim");
             localStorage.removeItem("autoCallNextLead");
         });
