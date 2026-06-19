@@ -86,9 +86,12 @@
 
         startCallSequence() {
             this.confirmCallYesClicked = false;
+            console.log('GreenLoader: startCallSequence called, looking for call icon');
 
             this.waitForElement('.call-img.mr-2.pointer', (callImg) => {
+                console.log('GreenLoader: call icon found, clicking');
                 callImg.click();
+                console.log('GreenLoader: call icon clicked, watching for Confirm call dialog');
                 this.autoConfirmCallDialog();
             });
         },
@@ -121,24 +124,39 @@
         },
 
         autoConfirmCallDialog() {
-            if (this.callConfirmWatcherActive) return;
+            if (this.callConfirmWatcherActive) {
+                console.log('GreenLoader: Confirm call watcher is already active');
+                return;
+            }
+
+            console.log('GreenLoader: starting Confirm call watcher');
             this.callConfirmWatcherActive = true;
 
             const getConfirmDialog = () => {
-                return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
-                    const yesButton = dialog.querySelector('.el-button.el-button--success.mt-4');
-                    if (!yesButton) return false;
+                const dialogs = Array.from(document.querySelectorAll('.el-dialog'));
+                console.log(`GreenLoader: looking for Confirm call dialog, found ${dialogs.length} dialog(s)`);
 
+                return dialogs.find((dialog) => {
                     const title = dialog.querySelector('.el-dialog__title');
-                    if (!title) return true;
+                    const titleText = title ? title.textContent.trim().toLowerCase() : '';
+                    const hasCallConfirmContent = !!dialog.querySelector('.call-confirm');
 
-                    return title.textContent.trim().toLowerCase() === 'confirm call';
+                    console.log('GreenLoader: checking dialog', {
+                        title: titleText || 'no title',
+                        hasCallConfirmContent
+                    });
+
+                    if (!title) return hasCallConfirmContent;
+
+                    return titleText === 'confirm call';
                 });
             };
 
             const hasCaruselInDom = () => {
                 const pageHtml = document.documentElement.outerHTML.toLowerCase();
-                return pageHtml.includes('carusel') || pageHtml.includes('carousel');
+                const hasWord = pageHtml.includes('carusel') || pageHtml.includes('carousel');
+                console.log(`GreenLoader: carusel/carousel word found: ${hasWord}`);
+                return hasWord;
             };
 
             const clickConfirmYesIfNeeded = () => {
@@ -153,8 +171,18 @@
                     return true;
                 }
 
+                console.log('GreenLoader: Confirm call dialog found, looking for Yes button');
+
                 const yesButton = Array.from(confirmDialog.querySelectorAll('.el-button.el-button--success.mt-4')).find((button) => {
-                    return button.textContent.trim().toLowerCase() === 'yes' && button.getAttribute('aria-disabled') !== 'true';
+                    const buttonText = button.textContent.trim().toLowerCase();
+                    const isDisabled = button.getAttribute('aria-disabled') === 'true' || button.disabled;
+
+                    console.log('GreenLoader: checking success button', {
+                        text: buttonText || 'no text',
+                        isDisabled
+                    });
+
+                    return buttonText === 'yes' && !isDisabled;
                 });
 
                 if (!yesButton) {
@@ -188,6 +216,7 @@
             setTimeout(() => {
                 observer.disconnect();
                 this.callConfirmWatcherActive = false;
+                console.log('GreenLoader: Confirm call watcher timed out');
             }, 5000);
         },
 
