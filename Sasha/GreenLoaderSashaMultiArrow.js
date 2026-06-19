@@ -15,6 +15,7 @@
         pageType: null,
         currentCallSeconds: 0, // Save amount of the sec.
         wasOnCall: false,
+        callConfirmWatcherActive: false,
 
         init() {
             this.detectPage();
@@ -86,6 +87,7 @@
             let callImg = document.querySelector('.call-img.mr-2.pointer');
             if (callImg) {
                 callImg.click();
+                this.autoConfirmCallDialog();
                 setTimeout(() => {
                     let dangerBtn = document.querySelector('.el-button.el-button--danger');
                     if (dangerBtn) dangerBtn.click();
@@ -95,6 +97,58 @@
                     // }, 500);
                 }, 500);
             }
+        },
+
+        autoConfirmCallDialog() {
+            if (this.callConfirmWatcherActive) return;
+            this.callConfirmWatcherActive = true;
+
+            const getConfirmDialog = () => {
+                return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
+                    const title = dialog.querySelector('.el-dialog__title');
+                    return title && title.textContent.trim().toLowerCase() === 'confirm call';
+                });
+            };
+
+            const hasCarouselInDom = () => {
+                const pageHtml = document.documentElement.outerHTML.toLowerCase();
+                return pageHtml.includes('carousel');
+            };
+
+            const clickConfirmYesIfNeeded = () => {
+                const confirmDialog = getConfirmDialog();
+                if (!confirmDialog) return false;
+
+                if (!hasCarouselInDom()) {
+                    const yesButton = confirmDialog.querySelector('.el-button.el-button--success.mt-4');
+                    if (!yesButton) return false;
+                    yesButton.click();
+                }
+
+                return true;
+            };
+
+            if (clickConfirmYesIfNeeded()) {
+                this.callConfirmWatcherActive = false;
+                return;
+            }
+
+            const observer = new MutationObserver(() => {
+                if (!clickConfirmYesIfNeeded()) return;
+
+                observer.disconnect();
+                this.callConfirmWatcherActive = false;
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+
+            setTimeout(() => {
+                observer.disconnect();
+                this.callConfirmWatcherActive = false;
+            }, 5000);
         },
 
         // ==========================================
