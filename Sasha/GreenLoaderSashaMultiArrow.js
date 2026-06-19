@@ -11,8 +11,6 @@
 (function() {
     'use strict';
 
-    console.log('GreenLoader: script loaded');
-
     const CRM = {
         pageType: null,
         currentCallSeconds: 0, // Save amount of the sec.
@@ -21,23 +19,19 @@
         confirmCallYesClicked: false,
 
         init() {
-            console.log('GreenLoader: CRM init');
             this.detectPage();
             this.initHotkeys();
         },
 
         // 1. Realizw wht is the page
         detectPage() {
-            console.log('GreenLoader: detectPage started');
             const interval = setInterval(() => {
                 if (document.querySelector(".player-title")) {
                     this.pageType = "LEAD";
-                    console.log('GreenLoader: page detected as LEAD');
                     this.initLeadLogic();
                     clearInterval(interval);
                 } else if (document.querySelector('.page-holder .wrapper .connect span') || document.querySelector('.block-btn-call') || document.querySelector('.timer')) {
                     this.pageType = "CALL";
-                    console.log('GreenLoader: page detected as CALL');
                     this.initCallLogic();
                     clearInterval(interval);
                 }
@@ -46,21 +40,16 @@
 
         // 2. HOT KEY
         initHotkeys() {
-            console.log('GreenLoader: hotkeys initialized');
             document.addEventListener('keydown', (e) => {
                 // If you write the comment - don't react
                 if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
-                    console.log(`GreenLoader: ignored key ${e.key} because target is ${e.target.tagName}`);
                     return;
                 }
 
                 if (e.key === 'ArrowUp') {
-                    console.log(`GreenLoader: ArrowUp pressed, pageType=${this.pageType}`);
                     e.preventDefault();
                     if (this.pageType === "LEAD") {
                         this.startCallSequence();
-                    } else {
-                        console.log('GreenLoader: ArrowUp ignored because page is not LEAD');
                     }
                 }
 
@@ -101,12 +90,9 @@
 
         startCallSequence() {
             this.confirmCallYesClicked = false;
-            console.log('GreenLoader: startCallSequence called, looking for call icon');
 
             this.waitForElement('.call-img.mr-2.pointer', (callImg) => {
-                console.log('GreenLoader: call icon found, clicking');
                 callImg.click();
-                console.log('GreenLoader: call icon clicked, watching for Confirm call dialog');
                 this.autoConfirmCallDialog();
             });
         },
@@ -134,32 +120,23 @@
 
             const timeoutId = setTimeout(() => {
                 observer.disconnect();
-                console.log(`GreenLoader: timed out waiting for ${selector}`);
             }, timeout);
         },
 
         autoConfirmCallDialog() {
             if (this.callConfirmWatcherActive) {
-                console.log('GreenLoader: Confirm call watcher is already active');
                 return;
             }
 
-            console.log('GreenLoader: starting Confirm call watcher');
             this.callConfirmWatcherActive = true;
 
             const getConfirmDialog = () => {
                 const dialogs = Array.from(document.querySelectorAll('.el-dialog'));
-                console.log(`GreenLoader: looking for Confirm call dialog, found ${dialogs.length} dialog(s)`);
 
                 return dialogs.find((dialog) => {
                     const title = dialog.querySelector('.el-dialog__title');
                     const titleText = title ? title.textContent.trim().toLowerCase() : '';
                     const hasCallConfirmContent = !!dialog.querySelector('.call-confirm');
-
-                    console.log('GreenLoader: checking dialog', {
-                        title: titleText || 'no title',
-                        hasCallConfirmContent
-                    });
 
                     if (!title) return hasCallConfirmContent;
 
@@ -169,45 +146,32 @@
 
             const hasCaruselInDom = () => {
                 const pageHtml = document.documentElement.outerHTML.toLowerCase();
-                const hasWord = pageHtml.includes('carusel') || pageHtml.includes('carousel');
-                console.log(`GreenLoader: carusel/carousel word found: ${hasWord}`);
-                return hasWord;
+                return pageHtml.includes('carusel') || pageHtml.includes('carousel');
             };
 
             const clickConfirmYesIfNeeded = () => {
                 const confirmDialog = getConfirmDialog();
                 if (!confirmDialog) {
-                    console.log('GreenLoader: waiting for Confirm call dialog');
                     return false;
                 }
 
                 if (hasCaruselInDom()) {
-                    console.log('GreenLoader: carusel/carousel found, not clicking Confirm call Yes');
                     return true;
                 }
-
-                console.log('GreenLoader: Confirm call dialog found, looking for Yes button');
 
                 const yesButton = Array.from(confirmDialog.querySelectorAll('.el-button.el-button--success.mt-4')).find((button) => {
                     const buttonText = button.textContent.trim().toLowerCase();
                     const isDisabled = button.getAttribute('aria-disabled') === 'true' || button.disabled;
 
-                    console.log('GreenLoader: checking success button', {
-                        text: buttonText || 'no text',
-                        isDisabled
-                    });
-
                     return buttonText === 'yes' && !isDisabled;
                 });
 
                 if (!yesButton) {
-                    console.log('GreenLoader: waiting for Confirm call Yes button');
                     return false;
                 }
 
                 yesButton.click();
                 this.confirmCallYesClicked = true;
-                console.log('GreenLoader: clicked Confirm call Yes');
                 return true;
             };
 
@@ -231,7 +195,6 @@
             setTimeout(() => {
                 observer.disconnect();
                 this.callConfirmWatcherActive = false;
-                console.log('GreenLoader: Confirm call watcher timed out');
             }, 5000);
         },
 
@@ -370,18 +333,14 @@
     }
 
     async function authorizeGreenLoader() {
-        console.log('GreenLoader: authorization started');
         const agentName = await waitForAgentName();
-        console.log('GreenLoader: agent name result', agentName);
 
         if (!agentName) {
-            console.log('GreenLoader: authorization stopped, agent name not found');
             showNotAuthorizedMessage("Not authorized: Agent name not found");
             return false;
         }
 
         try {
-            console.log('GreenLoader: sending authorization request');
             const response = await fetch("https://alphadev.space/Green/GreenAutoEmailV2/AutoEmailM/API/autoStatusCalls.php", {
                 method: "POST",
                 headers: {
@@ -393,14 +352,11 @@
             });
 
             const data = await response.json();
-            console.log('GreenLoader: authorization response', data);
 
             if (Number(data?.status) === 1) {
-                console.log('GreenLoader: authorization success');
                 return true;
             }
 
-            console.log('GreenLoader: authorization failed by API status');
             showNotAuthorizedMessage("Not authorized");
             return false;
         } catch (error) {
@@ -411,12 +367,9 @@
     }
 
     async function initGreenLoader() {
-        console.log('GreenLoader: initGreenLoader called');
         const isAuthorized = await authorizeGreenLoader();
-        console.log('GreenLoader: isAuthorized', isAuthorized);
 
         if (!isAuthorized) {
-            console.log('GreenLoader: CRM init skipped because authorization failed');
             return;
         }
 
@@ -424,6 +377,5 @@
     }
 
     // Запуск
-    console.log('GreenLoader: calling initGreenLoader');
     initGreenLoader();
 })();
