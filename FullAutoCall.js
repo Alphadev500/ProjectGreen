@@ -234,6 +234,10 @@ const Green = {
     callIconClick: (callback=null) => {
         Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
             callButton.addEventListener("click", callback);
+            callButton.addEventListener("click", () => {
+                Green.refuseToTalkYesClicked = false;
+                Green.autoConfirmCallDialog();
+            });
             Green.autoCallReady = true;
 
             if (Green.scheduleAutoCallNextLead) {
@@ -640,6 +644,114 @@ const Green = {
                             }, interval);
                         }
 
+                        function autoConfirmFrameCallDialog(frame) {
+                            if (frame.dataset.greenCallConfirmWatcherActive === "true") return;
+                            frame.dataset.greenCallConfirmWatcherActive = "true";
+
+                            function getFrameDocument() {
+                                try {
+                                    return frame.contentDocument;
+                                } catch (e) {
+                                    return null;
+                                }
+                            }
+
+                            function getConfirmDialog(doc) {
+                                return Array.from(doc.querySelectorAll(".el-dialog")).find(function (dialog) {
+                                    const title = dialog.querySelector(".el-dialog__title");
+                                    const titleText = title ? title.textContent.trim().toLowerCase() : "";
+                                    const hasCallConfirmContent = !!dialog.querySelector(".call-confirm");
+
+                                    if (!title) return hasCallConfirmContent;
+
+                                    return titleText === "confirm call";
+                                });
+                            }
+
+                            function getRefuseToTalkDialog(doc) {
+                                return Array.from(doc.querySelectorAll(".el-dialog")).find(function (dialog) {
+                                    return dialog.textContent.toLowerCase().includes("refuse to talk");
+                                });
+                            }
+
+                            function hasCaruselInDom(doc) {
+                                const pageHtml = doc.documentElement.outerHTML.toLowerCase();
+                                return pageHtml.includes("carusel") || pageHtml.includes("carousel");
+                            }
+
+                            function clickRefuseToTalkYesIfNeeded(doc) {
+                                if (frame.dataset.greenRefuseToTalkYesClicked === "true") return false;
+
+                                const refuseToTalkDialog = getRefuseToTalkDialog(doc);
+                                if (!refuseToTalkDialog) return false;
+
+                                const yesCallButton = Array.from(refuseToTalkDialog.querySelectorAll(".el-button.el-button--danger")).find(function (button) {
+                                    const buttonText = button.textContent.trim().toLowerCase();
+                                    const isDisabled = button.getAttribute("aria-disabled") === "true" || button.disabled;
+
+                                    return buttonText === "yes, call" && !isDisabled;
+                                });
+
+                                if (!yesCallButton) return false;
+
+                                yesCallButton.click();
+                                frame.dataset.greenRefuseToTalkYesClicked = "true";
+                                return false;
+                            }
+
+                            function clickConfirmYesIfNeeded() {
+                                const doc = getFrameDocument();
+                                if (!doc) return false;
+
+                                clickRefuseToTalkYesIfNeeded(doc);
+
+                                const confirmDialog = getConfirmDialog(doc);
+                                if (!confirmDialog) return false;
+
+                                if (hasCaruselInDom(doc)) return true;
+
+                                const yesButton = Array.from(confirmDialog.querySelectorAll(".el-button.el-button--success.mt-4")).find(function (button) {
+                                    const buttonText = button.textContent.trim().toLowerCase();
+                                    const isDisabled = button.getAttribute("aria-disabled") === "true" || button.disabled;
+
+                                    return buttonText === "yes" && !isDisabled;
+                                });
+
+                                if (!yesButton) return false;
+
+                                yesButton.click();
+                                return true;
+                            }
+
+                            if (clickConfirmYesIfNeeded()) {
+                                frame.dataset.greenCallConfirmWatcherActive = "false";
+                                return;
+                            }
+
+                            const doc = getFrameDocument();
+                            if (!doc || !doc.body) {
+                                frame.dataset.greenCallConfirmWatcherActive = "false";
+                                return;
+                            }
+
+                            const observer = new MutationObserver(function () {
+                                if (!clickConfirmYesIfNeeded()) return;
+
+                                observer.disconnect();
+                                frame.dataset.greenCallConfirmWatcherActive = "false";
+                            });
+
+                            observer.observe(doc.body, {
+                                childList: true,
+                                subtree: true
+                            });
+
+                            setTimeout(function () {
+                                observer.disconnect();
+                                frame.dataset.greenCallConfirmWatcherActive = "false";
+                            }, 5000);
+                        }
+
                         function clickFrameActivityTab(frame, callback) {
                             let completed = false;
                             const done = function () {
@@ -685,7 +797,9 @@ const Green = {
 
                                     waitForFrameElement(frame, ".call-img.mr-2.pointer", function (callButton) {
                                         setTimeout(function () {
+                                            frame.dataset.greenRefuseToTalkYesClicked = "false";
                                             callButton.click();
+                                            autoConfirmFrameCallDialog(frame);
                                         }, 500);
                                     });
                                 });
