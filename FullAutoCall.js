@@ -291,9 +291,15 @@ const Green = {
         Green.refuseToTalkYesClicked = false;
 
         Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
+            if (Green.isCarouselLead()) return;
+
             callButton.click();
             Green.autoConfirmCallDialog();
         });
+    },
+    isCarouselLead: (doc = document) => {
+        const pageHtml = doc && doc.documentElement ? doc.documentElement.outerHTML.toLowerCase() : '';
+        return pageHtml.includes('carusel') || pageHtml.includes('carousel');
     },
     autoConfirmCallDialog: () => {
         if (Green.callConfirmWatcherActive) return;
@@ -315,11 +321,6 @@ const Green = {
             return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
                 return dialog.textContent.toLowerCase().includes('refuse to talk');
             });
-        };
-
-        const hasCaruselInDom = () => {
-            const pageHtml = document.documentElement.outerHTML.toLowerCase();
-            return pageHtml.includes('carusel') || pageHtml.includes('carousel');
         };
 
         const clickRefuseToTalkYesIfNeeded = () => {
@@ -348,7 +349,7 @@ const Green = {
             const confirmDialog = getConfirmDialog();
             if (!confirmDialog) return false;
 
-            if (hasCaruselInDom()) return true;
+            if (Green.isCarouselLead()) return true;
 
             const yesButton = Array.from(confirmDialog.querySelectorAll('.el-button.el-button--success.mt-4')).find((button) => {
                 const buttonText = button.textContent.trim().toLowerCase();
@@ -449,6 +450,12 @@ const Green = {
         Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
             const latestClaim = JSON.parse(localStorage.getItem("autoCallNextLeadClaim") || "null");
             if (!latestClaim || latestClaim.userId != currentLeadId) return;
+
+            if (Green.isCarouselLead()) {
+                localStorage.removeItem("autoCallNextLeadClaim");
+                localStorage.removeItem("autoCallNextLead");
+                return;
+            }
 
             Green.refuseToTalkYesClicked = false;
             callButton.click();
@@ -674,11 +681,6 @@ const Green = {
                                 });
                             }
 
-                            function hasCaruselInDom(doc) {
-                                const pageHtml = doc.documentElement.outerHTML.toLowerCase();
-                                return pageHtml.includes("carusel") || pageHtml.includes("carousel");
-                            }
-
                             function clickRefuseToTalkYesIfNeeded(doc) {
                                 if (frame.dataset.greenRefuseToTalkYesClicked === "true") return false;
 
@@ -708,7 +710,7 @@ const Green = {
                                 const confirmDialog = getConfirmDialog(doc);
                                 if (!confirmDialog) return false;
 
-                                if (hasCaruselInDom(doc)) return true;
+                                if (frame.contentWindow.Green.isCarouselLead(doc)) return true;
 
                                 const yesButton = Array.from(confirmDialog.querySelectorAll(".el-button.el-button--success.mt-4")).find(function (button) {
                                     const buttonText = button.textContent.trim().toLowerCase();
@@ -798,6 +800,12 @@ const Green = {
                                     waitForFrameElement(frame, ".call-img.mr-2.pointer", function (callButton) {
                                         setTimeout(function () {
                                             frame.dataset.greenRefuseToTalkYesClicked = "false";
+                                            try {
+                                                if (frame.contentWindow.Green.isCarouselLead(frame.contentDocument)) return;
+                                            } catch (e) {
+                                                return;
+                                            }
+
                                             callButton.click();
                                             autoConfirmFrameCallDialog(frame);
                                         }, 500);
