@@ -1056,7 +1056,7 @@ const Green = {
     },
 };
 
-const FULL_AUTO_CALL_AUTH_URL = "https://alphadev.space/AutoEmailM/API/full_auto_call.php";
+const FULL_AUTO_CALL_AUTH_URL = "https://alphadev.space/Green/GreenAutoEmailV2/AutoEmailM/API/full_auto_call.php";
 const FULL_AUTO_CALL_AUTH_TOKEN = "c53f0f481e693ab27d8e5b6a90c4f7d21e863a04b5c982f3d1a7e6f90b4c8d2a";
 
 function getFullAutoCallUsername() {
