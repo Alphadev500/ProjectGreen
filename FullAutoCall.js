@@ -291,8 +291,6 @@ const Green = {
         Green.refuseToTalkYesClicked = false;
 
         Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
-            if (Green.isCarouselLead()) return;
-
             callButton.click();
             Green.autoConfirmCallDialog();
         });
@@ -450,12 +448,6 @@ const Green = {
         Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
             const latestClaim = JSON.parse(localStorage.getItem("autoCallNextLeadClaim") || "null");
             if (!latestClaim || latestClaim.userId != currentLeadId) return;
-
-            if (Green.isCarouselLead()) {
-                localStorage.removeItem("autoCallNextLeadClaim");
-                localStorage.removeItem("autoCallNextLead");
-                return;
-            }
 
             Green.refuseToTalkYesClicked = false;
             callButton.click();
@@ -800,12 +792,6 @@ const Green = {
                                     waitForFrameElement(frame, ".call-img.mr-2.pointer", function (callButton) {
                                         setTimeout(function () {
                                             frame.dataset.greenRefuseToTalkYesClicked = "false";
-                                            try {
-                                                if (frame.contentWindow.Green.isCarouselLead(frame.contentDocument)) return;
-                                            } catch (e) {
-                                                return;
-                                            }
-
                                             callButton.click();
                                             autoConfirmFrameCallDialog(frame);
                                         }, 500);
