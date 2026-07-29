@@ -302,6 +302,8 @@ const Green = {
     autoConfirmCallDialog: () => {
         if (Green.callConfirmWatcherActive) return;
         Green.callConfirmWatcherActive = true;
+        const carouselDetectionDelay = 750;
+        const carouselCheckReadyAt = Date.now() + carouselDetectionDelay;
 
         const getConfirmDialog = () => {
             return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
@@ -347,6 +349,10 @@ const Green = {
             const confirmDialog = getConfirmDialog();
             if (!confirmDialog) return false;
 
+            // Lead details are loaded asynchronously; wait before deciding whether
+            // this is a carousel number or before clicking the normal Yes button.
+            if (Date.now() < carouselCheckReadyAt) return false;
+
             if (Green.isCarouselLead()) return true;
 
             const yesButton = Array.from(confirmDialog.querySelectorAll('button, [role="button"]')).find((button) => {
@@ -381,6 +387,13 @@ const Green = {
             attributes: true,
             attributeFilter: ['aria-disabled', 'disabled', 'class']
         });
+
+        setTimeout(() => {
+            if (!clickConfirmYesIfNeeded()) return;
+
+            observer.disconnect();
+            Green.callConfirmWatcherActive = false;
+        }, carouselDetectionDelay);
 
         setTimeout(() => {
             observer.disconnect();
@@ -649,6 +662,8 @@ const Green = {
                         function autoConfirmFrameCallDialog(frame) {
                             if (frame.dataset.greenCallConfirmWatcherActive === "true") return;
                             frame.dataset.greenCallConfirmWatcherActive = "true";
+                            const carouselDetectionDelay = 750;
+                            const carouselCheckReadyAt = Date.now() + carouselDetectionDelay;
 
                             function getFrameDocument() {
                                 try {
@@ -705,6 +720,9 @@ const Green = {
                                 const confirmDialog = getConfirmDialog(doc);
                                 if (!confirmDialog) return false;
 
+                                // The lead information is populated asynchronously.
+                                if (Date.now() < carouselCheckReadyAt) return false;
+
                                 if (frame.contentWindow.Green.isCarouselLead(doc)) return true;
 
                                 const yesButton = Array.from(confirmDialog.querySelectorAll('button, [role="button"]')).find(function (button) {
@@ -745,6 +763,13 @@ const Green = {
                                 attributes: true,
                                 attributeFilter: ["aria-disabled", "disabled", "class"]
                             });
+
+                            setTimeout(function () {
+                                if (!clickConfirmYesIfNeeded()) return;
+
+                                observer.disconnect();
+                                frame.dataset.greenCallConfirmWatcherActive = "false";
+                            }, carouselDetectionDelay);
 
                             setTimeout(function () {
                                 observer.disconnect();
