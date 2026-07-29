@@ -38,26 +38,26 @@ const Green = {
                     color: white;
                     font-family: Arial, sans-serif;
                 }
-        
+
                 #modMenuInjected.active {
                     display: block;
                     opacity: 1;
                     transform: translate(-50%, -50%) scale(1);
                     pointer-events: all;
                 }
-        
+
                 #modMenuInjected h2 {
                     text-align: center;
                     margin-top: 0;
                 }
-        
+
                 .mod-option {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                     margin: 12px 0;
                 }
-        
+
                 .mod-input {
                     width: 100%;
                     padding: 8px;
@@ -67,7 +67,7 @@ const Green = {
                     color: white;
                     margin-top: 5px;
                 }
-        
+
                 .save-btn {
                     width: 100%;
                     padding: 10px;
@@ -79,7 +79,7 @@ const Green = {
                     font-weight: bold;
                     cursor: pointer;
                 }
-        
+
                 .save-btn:hover {
                     background: #45a049;
                 }
@@ -92,7 +92,7 @@ const Green = {
 
             menu.innerHTML = `
                 <h2>⚙ Mod Menu</h2>
-        
+
                 <div class="mod-option">
                     <span>Auto Emails</span>
                     <input type="checkbox" id="autoEmail">
@@ -102,12 +102,12 @@ const Green = {
                     <span>Auto Calling</span>
                     <input type="checkbox" id="autoCalling">
                 </div>
-        
+
                 <div class="mod-option">
                     <span>Switch Keys (F8/F9)</span>
                     <input type="checkbox" id="switchKeys">
                 </div>
-        
+
                 <div class="mod-option" style="flex-direction: column; align-items: flex-start;">
                     <span>Email Template Name</span>
                     <input type="text" id="autoEmailTempName" class="mod-input" placeholder="Enter name...">
@@ -117,7 +117,7 @@ const Green = {
                     <span>Auto Hengup Timer</span>
                     <input type="number" id="autoHengupTimer" class="mod-input" min="1" placeholder="35">
                 </div>
-        
+
                 <button class="save-btn" id="saveSettings">Save</button>
             `;
 
@@ -291,15 +291,9 @@ const Green = {
         Green.refuseToTalkYesClicked = false;
 
         Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
-            if (Green.isCarouselLead()) return;
-
             callButton.click();
             Green.autoConfirmCallDialog();
         });
-    },
-    isCarouselLead: (doc = document) => {
-        const pageHtml = doc && doc.documentElement ? doc.documentElement.outerHTML.toLowerCase() : '';
-        return pageHtml.includes('carusel') || pageHtml.includes('carousel');
     },
     autoConfirmCallDialog: () => {
         if (Green.callConfirmWatcherActive) return;
@@ -321,6 +315,11 @@ const Green = {
             return Array.from(document.querySelectorAll('.el-dialog')).find((dialog) => {
                 return dialog.textContent.toLowerCase().includes('refuse to talk');
             });
+        };
+
+        const hasCaruselInDom = () => {
+            const pageHtml = document.documentElement.outerHTML.toLowerCase();
+            return pageHtml.includes('carusel') || pageHtml.includes('carousel');
         };
 
         const clickRefuseToTalkYesIfNeeded = () => {
@@ -349,7 +348,7 @@ const Green = {
             const confirmDialog = getConfirmDialog();
             if (!confirmDialog) return false;
 
-            if (Green.isCarouselLead()) return true;
+            if (hasCaruselInDom()) return true;
 
             const yesButton = Array.from(confirmDialog.querySelectorAll('.el-button.el-button--success.mt-4')).find((button) => {
                 const buttonText = button.textContent.trim().toLowerCase();
@@ -450,12 +449,6 @@ const Green = {
         Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
             const latestClaim = JSON.parse(localStorage.getItem("autoCallNextLeadClaim") || "null");
             if (!latestClaim || latestClaim.userId != currentLeadId) return;
-
-            if (Green.isCarouselLead()) {
-                localStorage.removeItem("autoCallNextLeadClaim");
-                localStorage.removeItem("autoCallNextLead");
-                return;
-            }
 
             Green.refuseToTalkYesClicked = false;
             callButton.click();
@@ -681,6 +674,11 @@ const Green = {
                                 });
                             }
 
+                            function hasCaruselInDom(doc) {
+                                const pageHtml = doc.documentElement.outerHTML.toLowerCase();
+                                return pageHtml.includes("carusel") || pageHtml.includes("carousel");
+                            }
+
                             function clickRefuseToTalkYesIfNeeded(doc) {
                                 if (frame.dataset.greenRefuseToTalkYesClicked === "true") return false;
 
@@ -710,7 +708,7 @@ const Green = {
                                 const confirmDialog = getConfirmDialog(doc);
                                 if (!confirmDialog) return false;
 
-                                if (frame.contentWindow.Green.isCarouselLead(doc)) return true;
+                                if (hasCaruselInDom(doc)) return true;
 
                                 const yesButton = Array.from(confirmDialog.querySelectorAll(".el-button.el-button--success.mt-4")).find(function (button) {
                                     const buttonText = button.textContent.trim().toLowerCase();
@@ -800,12 +798,6 @@ const Green = {
                                     waitForFrameElement(frame, ".call-img.mr-2.pointer", function (callButton) {
                                         setTimeout(function () {
                                             frame.dataset.greenRefuseToTalkYesClicked = "false";
-                                            try {
-                                                if (frame.contentWindow.Green.isCarouselLead(frame.contentDocument)) return;
-                                            } catch (e) {
-                                                return;
-                                            }
-
                                             callButton.click();
                                             autoConfirmFrameCallDialog(frame);
                                         }, 500);
@@ -1056,80 +1048,7 @@ const Green = {
     },
 };
 
-const FULL_AUTO_CALL_AUTH_URL = "https://alphadev.space/AutoEmailM/API/full_auto_call.php";
-const FULL_AUTO_CALL_AUTH_TOKEN = "c53f0f481e693ab27d8e5b6a90c4f7d21e863a04b5c982f3d1a7e6f90b4c8d2a";
-
-function getFullAutoCallUsername() {
-    const header = document.querySelector(".header__ip");
-    if (!header) return null;
-
-    for (const line of header.querySelectorAll("p")) {
-        const text = (line.textContent || "").trim();
-        if (!text.toLowerCase().includes("agent name")) continue;
-
-        const name = text
-            .replace(/.*agent name\s*[:\-–—⏤]?\s*/i, "")
-            .trim();
-
-        if (name) return name;
-    }
-
-    return null;
-}
-
-function waitForFullAutoCallUsername(maxAttempts = 20, delayMs = 500) {
-    return new Promise((resolve) => {
-        let attempts = 0;
-
-        const findUsername = () => {
-            const username = getFullAutoCallUsername();
-            if (username) return resolve(username);
-
-            attempts += 1;
-            if (attempts >= maxAttempts) return resolve(null);
-            setTimeout(findUsername, delayMs);
-        };
-
-        findUsername();
-    });
-}
-
-function showFullAutoCallStoppedMessage(message) {
-    console.warn("FullAutoCall stopped:", message);
-}
-
-async function startFullAutoCall() {
-    const username = await waitForFullAutoCallUsername();
-    if (!username) {
-        showFullAutoCallStoppedMessage("username not found");
-        return;
-    }
-
-    try {
-        const response = await fetch(FULL_AUTO_CALL_AUTH_URL, {
-            method: "POST",
-            headers: {
-                "X-Green-AutoEmail-Token": FULL_AUTO_CALL_AUTH_TOKEN,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ username })
-        });
-        const data = await response.json();
-
-        if (!response.ok || Number(data?.status ?? data) === 0) {
-            showFullAutoCallStoppedMessage("authorization denied");
-            return;
-        }
-
-        Green.init();
-    } catch (error) {
-        console.error("FullAutoCall authorization request failed:", error);
-        showFullAutoCallStoppedMessage("authorization check failed");
-    }
-}
-
-startFullAutoCall();
-
+Green.init();
 
 // clicks: {
 //     phoneIcon: () => {
