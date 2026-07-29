@@ -349,7 +349,7 @@ const Green = {
 
             if (Green.isCarouselLead()) return true;
 
-            const yesButton = Array.from(confirmDialog.querySelectorAll('.el-button.el-button--success.mt-4')).find((button) => {
+            const yesButton = Array.from(confirmDialog.querySelectorAll('button, [role="button"]')).find((button) => {
                 const buttonText = button.textContent.trim().toLowerCase();
                 const isDisabled = button.getAttribute('aria-disabled') === 'true' || button.disabled;
 
@@ -376,13 +376,16 @@ const Green = {
 
         observer.observe(document.body, {
             childList: true,
-            subtree: true
+            subtree: true,
+            characterData: true,
+            attributes: true,
+            attributeFilter: ['aria-disabled', 'disabled', 'class']
         });
 
         setTimeout(() => {
             observer.disconnect();
             Green.callConfirmWatcherActive = false;
-        }, 5000);
+        }, 10000);
     },
     getCurrentLeadId: () => {
         try {
@@ -704,7 +707,7 @@ const Green = {
 
                                 if (frame.contentWindow.Green.isCarouselLead(doc)) return true;
 
-                                const yesButton = Array.from(confirmDialog.querySelectorAll(".el-button.el-button--success.mt-4")).find(function (button) {
+                                const yesButton = Array.from(confirmDialog.querySelectorAll('button, [role="button"]')).find(function (button) {
                                     const buttonText = button.textContent.trim().toLowerCase();
                                     const isDisabled = button.getAttribute("aria-disabled") === "true" || button.disabled;
 
@@ -737,13 +740,16 @@ const Green = {
 
                             observer.observe(doc.body, {
                                 childList: true,
-                                subtree: true
+                                subtree: true,
+                                characterData: true,
+                                attributes: true,
+                                attributeFilter: ["aria-disabled", "disabled", "class"]
                             });
 
                             setTimeout(function () {
                                 observer.disconnect();
                                 frame.dataset.greenCallConfirmWatcherActive = "false";
-                            }, 5000);
+                            }, 10000);
                         }
 
                         function clickFrameActivityTab(frame, callback) {
