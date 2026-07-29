@@ -302,7 +302,7 @@ const Green = {
     autoConfirmCallDialog: () => {
         if (Green.callConfirmWatcherActive) return;
         Green.callConfirmWatcherActive = true;
-        const carouselDetectionDelay = 750;
+        const carouselDetectionDelay = 2000;
         const carouselCheckReadyAt = Date.now() + carouselDetectionDelay;
 
         const getConfirmDialog = () => {
@@ -662,7 +662,7 @@ const Green = {
                         function autoConfirmFrameCallDialog(frame) {
                             if (frame.dataset.greenCallConfirmWatcherActive === "true") return;
                             frame.dataset.greenCallConfirmWatcherActive = "true";
-                            const carouselDetectionDelay = 750;
+                            const carouselDetectionDelay = 2000;
                             const carouselCheckReadyAt = Date.now() + carouselDetectionDelay;
 
                             function getFrameDocument() {
