@@ -295,6 +295,14 @@ const Green = {
             Green.autoConfirmCallDialog();
         });
     },
+    autoClickCallOnLoad: () => {
+        if (!Green.autoCallLeads) return;
+
+        // The call control is rendered after the page script has loaded, so
+        // wait for its current class combination instead of relying on the
+        // older call-button selector.
+        Green.clickCallAndConfirm();
+    },
     isCarouselLead: (doc = document) => {
         const pageHtml = doc && doc.documentElement ? doc.documentElement.outerHTML.toLowerCase() : '';
         return pageHtml.includes('carusel') || pageHtml.includes('carousel');
@@ -1070,6 +1078,7 @@ const Green = {
         Green.bindAutoCallNextLead();
         //Green.bindCallImageConfirm();
         DetectPage();
+        Green.autoClickCallOnLoad();
     },
 };
 
