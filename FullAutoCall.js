@@ -9,8 +9,6 @@ const Green = {
     callConfirmWatcherActive: false,
     refuseToTalkYesClicked: false,
     autoCallReady: false,
-    callClickLocked: false,
-    callEndAdvanceLocked: false,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
     },
@@ -293,28 +291,9 @@ const Green = {
         Green.refuseToTalkYesClicked = false;
 
         Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
-            if (!Green.triggerCallButton(callButton)) return;
+            callButton.click();
             Green.autoConfirmCallDialog();
         });
-    },
-    triggerCallButton: (callButton) => {
-        const frame = window.parent && window.parent !== window ? window.frameElement : null;
-        if (
-            !callButton ||
-            Green.callClickLocked ||
-            (frame && frame.dataset.greenCallClickLocked === "true")
-        ) return false;
-
-        Green.callClickLocked = true;
-        if (frame) frame.dataset.greenCallClickLocked = "true";
-        callButton.click();
-
-        setTimeout(() => {
-            Green.callClickLocked = false;
-            if (frame) frame.dataset.greenCallClickLocked = "false";
-        }, 2500);
-
-        return true;
     },
     autoClickCallOnLoad: () => {
         if (!Green.autoCallLeads) return;
@@ -322,7 +301,10 @@ const Green = {
         // The call control is rendered after the page script has loaded, so
         // wait for its current class combination instead of relying on the
         // older call-button selector.
-        Green.clickCallAndConfirm();
+        // Give DetectPage time to bind the lead-close handler before calling.
+        Green.setTimeout(() => {
+            Green.clickCallAndConfirm();
+        }, 1800, false);
     },
     isCarouselLead: (doc = document) => {
         const pageHtml = doc && doc.documentElement ? doc.documentElement.outerHTML.toLowerCase() : '';
@@ -495,7 +477,7 @@ const Green = {
             if (!latestClaim || latestClaim.userId != currentLeadId) return;
 
             Green.refuseToTalkYesClicked = false;
-            if (!Green.triggerCallButton(callButton)) return;
+            callButton.click();
             Green.autoConfirmCallDialog();
             localStorage.removeItem("autoCallNextLeadClaim");
             localStorage.removeItem("autoCallNextLead");
@@ -522,41 +504,6 @@ const Green = {
         });
 
         tryPendingAutoCall();
-    },
-    advanceAfterCallEnd: (closedUserId = null) => {
-        const currentLeadId = Green.getCurrentLeadId();
-        if (!currentLeadId || (closedUserId && currentLeadId != closedUserId)) return false;
-        if (Green.callEndAdvanceLocked) return false;
-
-        Green.callEndAdvanceLocked = true;
-        const advanced = Green.openNextQueuedLead();
-
-        setTimeout(() => {
-            Green.callEndAdvanceLocked = false;
-        }, 2500);
-
-        return advanced;
-    },
-    bindCallEndAdvance: () => {
-        window.addEventListener("storage", (event) => {
-            if (event.key === "greenCallEnded" && event.newValue) {
-                Green.advanceAfterCallEnd();
-                return;
-            }
-
-            if (event.key !== "user" || !event.newValue) return;
-
-            try {
-                const content = JSON.parse(event.newValue);
-                if (content.status !== "close") return;
-
-                // The lead page's built-in handler runs first in normal cases.
-                // This is a fallback for delayed/missed handlers after a hangup.
-                setTimeout(() => {
-                    Green.advanceAfterCallEnd(content.userId);
-                }, 1000);
-            } catch (e) {}
-        });
     },
     getLeadQueue: () => {
         try {
@@ -883,21 +830,6 @@ const Green = {
                                             frame.contentWindow.Green.sendEmailAndCall();
                                         }
                                     } catch (e) {}
-
-                                    waitForFrameElement(frame, ".call-img.mr-2.pointer", function (callButton) {
-                                        setTimeout(function () {
-                                            if (frame.dataset.greenCallClickLocked === "true") return;
-
-                                            frame.dataset.greenCallClickLocked = "true";
-                                            frame.dataset.greenRefuseToTalkYesClicked = "false";
-                                            callButton.click();
-                                            autoConfirmFrameCallDialog(frame);
-
-                                            setTimeout(function () {
-                                                frame.dataset.greenCallClickLocked = "false";
-                                            }, 2500);
-                                        }, 500);
-                                    });
                                 });
                             }, 500);
                         }
@@ -1139,7 +1071,6 @@ const Green = {
         Green.onAltCall();
         Green.onShiftHengUp();
         Green.bindAutoCallNextLead();
-        Green.bindCallEndAdvance();
         //Green.bindCallImageConfirm();
         DetectPage();
         Green.autoClickCallOnLoad();
