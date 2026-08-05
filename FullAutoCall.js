@@ -291,9 +291,23 @@ const Green = {
         Green.refuseToTalkYesClicked = false;
 
         Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
-            callButton.click();
+            if (!Green.clickCallButtonOnce(callButton)) return;
             Green.autoConfirmCallDialog();
         });
+    },
+    clickCallButtonOnce: (callButton) => {
+        if (!callButton) return false;
+
+        const leadKey = String(Green.getCurrentLeadId() || window.location.href);
+        const pageRoot = document.documentElement;
+
+        // Page-load automation and the next-lead signal can arrive together.
+        // Keep the marker on the document so both paths share one decision.
+        if (pageRoot.dataset.greenAutoCallLeadKey === leadKey) return false;
+
+        pageRoot.dataset.greenAutoCallLeadKey = leadKey;
+        callButton.click();
+        return true;
     },
     autoClickCallOnLoad: () => {
         if (!Green.autoCallLeads) return;
@@ -477,7 +491,11 @@ const Green = {
             if (!latestClaim || latestClaim.userId != currentLeadId) return;
 
             Green.refuseToTalkYesClicked = false;
-            callButton.click();
+            if (!Green.clickCallButtonOnce(callButton)) {
+                localStorage.removeItem("autoCallNextLeadClaim");
+                localStorage.removeItem("autoCallNextLead");
+                return;
+            }
             Green.autoConfirmCallDialog();
             localStorage.removeItem("autoCallNextLeadClaim");
             localStorage.removeItem("autoCallNextLead");
