@@ -12,6 +12,7 @@ const Green = {
     shortCallRetryLimit: 2,
     shortCallMaxSeconds: 5,
     shortCallRetryKey: "greenRzShortCallRetry",
+    shortCallRetrySignalKey: "greenRzRetryCurrentLead",
     leadCloseListenerBound: false,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
@@ -317,7 +318,7 @@ const Green = {
             return null;
         }
     },
-    markShortCallForRetry: (seconds) => {
+    requestShortCallRetry: (seconds) => {
         if (seconds === null || seconds > Green.shortCallMaxSeconds) return false;
 
         let user = null;
@@ -331,36 +332,65 @@ const Green = {
         const attempts = previous && previous.userId == user.userId ? previous.attempts || 0 : 0;
         if (attempts >= Green.shortCallRetryLimit) return false;
 
-        localStorage.setItem(Green.shortCallRetryKey, JSON.stringify({
+        const retry = {
             userId: user.userId,
             attempts: attempts + 1,
-            pending: true,
             createdAt: Date.now()
-        }));
+        };
+
+        localStorage.setItem(Green.shortCallRetryKey, JSON.stringify(retry));
+        localStorage.setItem(Green.shortCallRetrySignalKey, JSON.stringify(retry));
 
         return true;
     },
-    bindShortCallRetries: () => {
-        // This listener is registered before the normal lead-close listener.
-        // It keeps the current lead open only for the two short-call retries.
-        window.addEventListener("storage", (event) => {
-            if (event.key !== "user" || !event.newValue) return;
+    overrideShortCallEnd: () => {
+        const installOverride = () => {
+            if (typeof window.setCallAsEnded !== "function") return false;
+            if (window.setCallAsEnded.greenRzShortCallOverride) return true;
 
-            let closedUser = null;
+            const normalSetCallAsEnded = window.setCallAsEnded;
+            const retryAwareSetCallAsEnded = () => {
+                const seconds = Green.getCallSeconds();
+                const lastSeconds = Number(Green.lastCallSeconds);
+                const duration = seconds === null && !Number.isNaN(lastSeconds) ? lastSeconds : seconds;
+
+                // Do not publish the normal "user closed" event while a
+                // retry remains. That event is what advances to the next lead.
+                if (Green.requestShortCallRetry(duration)) {
+                    Green.onCall = false;
+                    Green.autoHengupTriggered = false;
+                    return;
+                }
+
+                normalSetCallAsEnded();
+            };
+
+            retryAwareSetCallAsEnded.greenRzShortCallOverride = true;
+            window.setCallAsEnded = retryAwareSetCallAsEnded;
+            return true;
+        };
+
+        if (installOverride()) return;
+
+        const startedAt = Date.now();
+        const waitForCallHelpers = setInterval(() => {
+            if (installOverride() || Date.now() - startedAt >= 30000) {
+                clearInterval(waitForCallHelpers);
+            }
+        }, 100);
+    },
+    bindShortCallRetries: () => {
+        window.addEventListener("storage", (event) => {
+            if (event.key !== Green.shortCallRetrySignalKey || !event.newValue) return;
+
+            let retry = null;
             try {
-                closedUser = JSON.parse(event.newValue);
+                retry = JSON.parse(event.newValue);
             } catch (e) {
                 return;
             }
 
-            if (closedUser.status !== "close") return;
-
-            const retry = Green.getShortCallRetry();
-            if (!retry || !retry.pending || retry.userId != closedUser.userId) return;
-
-            event.stopImmediatePropagation();
-            retry.pending = false;
-            localStorage.setItem(Green.shortCallRetryKey, JSON.stringify(retry));
+            if (!retry || !retry.userId || Green.getCurrentLeadId() != retry.userId) return;
 
             // Allow the call panel to return to its idle state before dialing
             // the same lead again. The normal click handlers still handle
@@ -370,23 +400,7 @@ const Green = {
             }, 800, false);
         });
 
-        // Record a short call before the normal hang-up handler publishes the
-        // lead-close event. Capture mode makes this run first for auto/manual
-        // clicks of the call-page hang-up button.
-        document.addEventListener("click", (event) => {
-            const target = event.target && event.target.closest
-                ? event.target.closest('.el-button.el-button--danger')
-                : null;
-            if (!target || !document.querySelector('.timer')) return;
-
-            const seconds = Green.getCallSeconds();
-            if (seconds !== null && seconds > Green.shortCallMaxSeconds) {
-                localStorage.removeItem(Green.shortCallRetryKey);
-                return;
-            }
-
-            Green.markShortCallForRetry(seconds);
-        }, true);
+        Green.overrideShortCallEnd();
     },
     autoClickCallOnLoad: () => {
         if (!Green.autoCallLeads) return;
@@ -427,6 +441,18 @@ const Green = {
             });
         };
 
+        const getEnabledYesButton = () => {
+            const dialogs = Array.from(document.querySelectorAll('.el-dialog'));
+
+            return dialogs.flatMap((dialog) => Array.from(dialog.querySelectorAll('button, [role="button"]')))
+                .find((button) => {
+                    const buttonText = button.textContent.trim().toLowerCase();
+                    const isDisabled = button.getAttribute('aria-disabled') === 'true' || button.disabled;
+
+                    return buttonText === 'yes' && !isDisabled;
+                });
+        };
+
         const clickRefuseToTalkYesIfNeeded = () => {
             if (Green.refuseToTalkYesClicked) return false;
 
@@ -450,21 +476,13 @@ const Green = {
         const clickConfirmYesIfNeeded = () => {
             clickRefuseToTalkYesIfNeeded();
 
-            const confirmDialog = getConfirmDialog();
-            if (!confirmDialog) return false;
-
             // Lead details are loaded asynchronously; wait before deciding whether
             // this is a carousel number or before clicking the normal Yes button.
             if (Date.now() < carouselCheckReadyAt) return false;
 
             if (Green.isCarouselLead()) return true;
 
-            const yesButton = Array.from(confirmDialog.querySelectorAll('button, [role="button"]')).find((button) => {
-                const buttonText = button.textContent.trim().toLowerCase();
-                const isDisabled = button.getAttribute('aria-disabled') === 'true' || button.disabled;
-
-                return buttonText === 'yes' && !isDisabled;
-            });
+            const yesButton = getEnabledYesButton();
 
             if (!yesButton) return false;
 
@@ -477,10 +495,12 @@ const Green = {
             return;
         }
 
+        let retryTimer = null;
         const observer = new MutationObserver(() => {
             if (!clickConfirmYesIfNeeded()) return;
 
             observer.disconnect();
+            clearInterval(retryTimer);
             Green.callConfirmWatcherActive = false;
         });
 
@@ -492,15 +512,25 @@ const Green = {
             attributeFilter: ['aria-disabled', 'disabled', 'class']
         });
 
+        retryTimer = setInterval(() => {
+            if (!clickConfirmYesIfNeeded()) return;
+
+            clearInterval(retryTimer);
+            observer.disconnect();
+            Green.callConfirmWatcherActive = false;
+        }, 100);
+
         setTimeout(() => {
             if (!clickConfirmYesIfNeeded()) return;
 
             observer.disconnect();
+            clearInterval(retryTimer);
             Green.callConfirmWatcherActive = false;
         }, carouselDetectionDelay);
 
         setTimeout(() => {
             observer.disconnect();
+            clearInterval(retryTimer);
             Green.callConfirmWatcherActive = false;
         }, 10000);
     },
@@ -795,6 +825,19 @@ const Green = {
                                 });
                             }
 
+                            function getEnabledYesButton(doc) {
+                                const dialogs = Array.from(doc.querySelectorAll(".el-dialog"));
+
+                                return dialogs.flatMap(function (dialog) {
+                                    return Array.from(dialog.querySelectorAll('button, [role="button"]'));
+                                }).find(function (button) {
+                                    const buttonText = button.textContent.trim().toLowerCase();
+                                    const isDisabled = button.getAttribute("aria-disabled") === "true" || button.disabled;
+
+                                    return buttonText === "yes" && !isDisabled;
+                                });
+                            }
+
                             function clickRefuseToTalkYesIfNeeded(doc) {
                                 if (frame.dataset.greenRefuseToTalkYesClicked === "true") return false;
 
@@ -821,20 +864,12 @@ const Green = {
 
                                 clickRefuseToTalkYesIfNeeded(doc);
 
-                                const confirmDialog = getConfirmDialog(doc);
-                                if (!confirmDialog) return false;
-
                                 // The lead information is populated asynchronously.
                                 if (Date.now() < carouselCheckReadyAt) return false;
 
                                 if (frame.contentWindow.Green.isCarouselLead(doc)) return true;
 
-                                const yesButton = Array.from(confirmDialog.querySelectorAll('button, [role="button"]')).find(function (button) {
-                                    const buttonText = button.textContent.trim().toLowerCase();
-                                    const isDisabled = button.getAttribute("aria-disabled") === "true" || button.disabled;
-
-                                    return buttonText === "yes" && !isDisabled;
-                                });
+                                const yesButton = getEnabledYesButton(doc);
 
                                 if (!yesButton) return false;
 
@@ -853,10 +888,12 @@ const Green = {
                                 return;
                             }
 
+                            let retryTimer = null;
                             const observer = new MutationObserver(function () {
                                 if (!clickConfirmYesIfNeeded()) return;
 
                                 observer.disconnect();
+                                clearInterval(retryTimer);
                                 frame.dataset.greenCallConfirmWatcherActive = "false";
                             });
 
@@ -868,15 +905,25 @@ const Green = {
                                 attributeFilter: ["aria-disabled", "disabled", "class"]
                             });
 
+                            retryTimer = setInterval(function () {
+                                if (!clickConfirmYesIfNeeded()) return;
+
+                                clearInterval(retryTimer);
+                                observer.disconnect();
+                                frame.dataset.greenCallConfirmWatcherActive = "false";
+                            }, 100);
+
                             setTimeout(function () {
                                 if (!clickConfirmYesIfNeeded()) return;
 
                                 observer.disconnect();
+                                clearInterval(retryTimer);
                                 frame.dataset.greenCallConfirmWatcherActive = "false";
                             }, carouselDetectionDelay);
 
                             setTimeout(function () {
                                 observer.disconnect();
+                                clearInterval(retryTimer);
                                 frame.dataset.greenCallConfirmWatcherActive = "false";
                             }, 10000);
                         }

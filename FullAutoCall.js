@@ -1082,7 +1082,75 @@ const Green = {
     },
 };
 
-Green.init();
+const FULL_AUTO_CALL_AUTH_URL = "https://alphadev.space/AutoEmailM/API/full_auto_call.php";
+const FULL_AUTO_CALL_AUTH_TOKEN = "c53f0f481e693ab27d8e5b6a90c4f7d21e863a04b5c982f3d1a7e6f90b4c8d2a";
+
+function getFullAutoCallUsername() {
+    const header = document.querySelector(".header__ip");
+    if (!header) return null;
+
+    for (const line of header.querySelectorAll("p")) {
+        const text = (line.textContent || "").trim();
+        if (!text.toLowerCase().includes("agent name")) continue;
+
+        const username = text
+            .replace(/.*agent name\s*[:\-–—⏤]?\s*/i, "")
+            .trim();
+
+        if (username) return username;
+    }
+
+    return null;
+}
+
+function waitForFullAutoCallUsername(maxAttempts = 20, delayMs = 500) {
+    return new Promise((resolve) => {
+        let attempts = 0;
+
+        const tryFindUsername = () => {
+            const username = getFullAutoCallUsername();
+            if (username) return resolve(username);
+
+            attempts += 1;
+            if (attempts >= maxAttempts) return resolve(null);
+            setTimeout(tryFindUsername, delayMs);
+        };
+
+        tryFindUsername();
+    });
+}
+
+async function startFullAutoCall() {
+    const username = await waitForFullAutoCallUsername();
+    if (!username) {
+        console.warn("FullAutoCall stopped: agent username not found.");
+        return;
+    }
+
+    try {
+        const response = await fetch(FULL_AUTO_CALL_AUTH_URL, {
+            method: "POST",
+            headers: {
+                "X-Green-AutoEmail-Token": FULL_AUTO_CALL_AUTH_TOKEN,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username })
+        });
+        const data = await response.json();
+        const status = Number(data?.status ?? data);
+
+        if (!response.ok || status !== 1) {
+            console.warn("FullAutoCall stopped: authorization denied.");
+            return;
+        }
+
+        Green.init();
+    } catch (error) {
+        console.error("FullAutoCall authorization request failed:", error);
+    }
+}
+
+startFullAutoCall();
 
 // clicks: {
 //     phoneIcon: () => {
