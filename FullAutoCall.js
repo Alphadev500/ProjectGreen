@@ -10,6 +10,7 @@ const Green = {
     refuseToTalkYesClicked: false,
     autoCallReady: false,
     callClickLocked: false,
+    callEndAdvanceLocked: false,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
     },
@@ -521,6 +522,41 @@ const Green = {
         });
 
         tryPendingAutoCall();
+    },
+    advanceAfterCallEnd: (closedUserId = null) => {
+        const currentLeadId = Green.getCurrentLeadId();
+        if (!currentLeadId || (closedUserId && currentLeadId != closedUserId)) return false;
+        if (Green.callEndAdvanceLocked) return false;
+
+        Green.callEndAdvanceLocked = true;
+        const advanced = Green.openNextQueuedLead();
+
+        setTimeout(() => {
+            Green.callEndAdvanceLocked = false;
+        }, 2500);
+
+        return advanced;
+    },
+    bindCallEndAdvance: () => {
+        window.addEventListener("storage", (event) => {
+            if (event.key === "greenCallEnded" && event.newValue) {
+                Green.advanceAfterCallEnd();
+                return;
+            }
+
+            if (event.key !== "user" || !event.newValue) return;
+
+            try {
+                const content = JSON.parse(event.newValue);
+                if (content.status !== "close") return;
+
+                // The lead page's built-in handler runs first in normal cases.
+                // This is a fallback for delayed/missed handlers after a hangup.
+                setTimeout(() => {
+                    Green.advanceAfterCallEnd(content.userId);
+                }, 1000);
+            } catch (e) {}
+        });
     },
     getLeadQueue: () => {
         try {
@@ -1103,6 +1139,7 @@ const Green = {
         Green.onAltCall();
         Green.onShiftHengUp();
         Green.bindAutoCallNextLead();
+        Green.bindCallEndAdvance();
         //Green.bindCallImageConfirm();
         DetectPage();
         Green.autoClickCallOnLoad();
