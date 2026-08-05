@@ -9,6 +9,7 @@ const Green = {
     callConfirmWatcherActive: false,
     refuseToTalkYesClicked: false,
     autoCallReady: false,
+    callClickLocked: false,
     getRandomNumber : (from, to) => {
         return Math.random() * (from - to) + to;
     },
@@ -291,12 +292,27 @@ const Green = {
         Green.refuseToTalkYesClicked = false;
 
         Green.ifElementExists('.call-img.mr-2.pointer', (callButton) => {
-            callButton.click();
+            if (!Green.triggerCallButton(callButton)) return;
             Green.autoConfirmCallDialog();
         });
     },
+    triggerCallButton: (callButton) => {
+        if (!callButton || Green.callClickLocked) return false;
+
+        Green.callClickLocked = true;
+        callButton.click();
+
+        setTimeout(() => {
+            Green.callClickLocked = false;
+        }, 2500);
+
+        return true;
+    },
     autoClickCallOnLoad: () => {
         if (!Green.autoCallLeads) return;
+        // Queued leads are clicked by the iframe runner.  Do not let both the
+        // runner and the iframe's own initialization click the same control.
+        if (window.parent && window.parent !== window) return;
 
         // The call control is rendered after the page script has loaded, so
         // wait for its current class combination instead of relying on the
@@ -474,7 +490,7 @@ const Green = {
             if (!latestClaim || latestClaim.userId != currentLeadId) return;
 
             Green.refuseToTalkYesClicked = false;
-            callButton.click();
+            if (!Green.triggerCallButton(callButton)) return;
             Green.autoConfirmCallDialog();
             localStorage.removeItem("autoCallNextLeadClaim");
             localStorage.removeItem("autoCallNextLead");
@@ -830,9 +846,16 @@ const Green = {
 
                                     waitForFrameElement(frame, ".call-img.mr-2.pointer", function (callButton) {
                                         setTimeout(function () {
+                                            if (frame.dataset.greenCallClickLocked === "true") return;
+
+                                            frame.dataset.greenCallClickLocked = "true";
                                             frame.dataset.greenRefuseToTalkYesClicked = "false";
                                             callButton.click();
                                             autoConfirmFrameCallDialog(frame);
+
+                                            setTimeout(function () {
+                                                frame.dataset.greenCallClickLocked = "false";
+                                            }, 2500);
                                         }, 500);
                                     });
                                 });
