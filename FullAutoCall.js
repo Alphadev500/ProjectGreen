@@ -297,22 +297,26 @@ const Green = {
         });
     },
     triggerCallButton: (callButton) => {
-        if (!callButton || Green.callClickLocked) return false;
+        const frame = window.parent && window.parent !== window ? window.frameElement : null;
+        if (
+            !callButton ||
+            Green.callClickLocked ||
+            (frame && frame.dataset.greenCallClickLocked === "true")
+        ) return false;
 
         Green.callClickLocked = true;
+        if (frame) frame.dataset.greenCallClickLocked = "true";
         callButton.click();
 
         setTimeout(() => {
             Green.callClickLocked = false;
+            if (frame) frame.dataset.greenCallClickLocked = "false";
         }, 2500);
 
         return true;
     },
     autoClickCallOnLoad: () => {
         if (!Green.autoCallLeads) return;
-        // Queued leads are clicked by the iframe runner.  Do not let both the
-        // runner and the iframe's own initialization click the same control.
-        if (window.parent && window.parent !== window) return;
 
         // The call control is rendered after the page script has loaded, so
         // wait for its current class combination instead of relying on the
