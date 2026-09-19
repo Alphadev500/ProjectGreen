@@ -66,19 +66,27 @@
             const timer = document.querySelector('.timer');
             if (timer) {
                 sawCallTimer = true;
-                const seconds = parseTimerSeconds(timer.textContent);
+                const seconds = parseTimerSeconds(timer.innerText || timer.textContent);
                 activeCall.status = 'in-call';
                 activeCall.elapsedSeconds = seconds;
+                activeCall.pickedUp = isCallPickedUp();
                 writeActiveCall(activeCall);
 
                 if (seconds >= Number(activeCall.hangupSeconds)) {
-                    // Mark first, then click: interval ticks or duplicate script
-                    // contexts cannot send a second hangup/call action.
+                    const hangupButton = findHangupButton();
+                    if (!hangupButton) {
+                        activeCall.status = 'waiting-for-hangup-control';
+                        writeActiveCall(activeCall);
+                        await delay(200);
+                        continue;
+                    }
+
+                    // Mark immediately before the real click so a second
+                    // watcher cannot issue another hangup for this call.
                     activeCall.finishedAt = Date.now();
                     activeCall.status = 'hangup-requested';
                     writeActiveCall(activeCall);
-                    const hangupButton = document.querySelector('.el-button.el-button--danger');
-                    if (hangupButton) hangupButton.click();
+                    hangupButton.click();
                     localStorage.setItem(CALL_RESULT_KEY, JSON.stringify({
                         runId: activeCall.runId,
                         leadId: activeCall.leadId,
@@ -111,9 +119,30 @@
 
     function parseTimerSeconds(value) {
         const parts = String(value || '').trim().split(':').map(Number);
-        return parts.length === 3 && parts.every(Number.isFinite)
-            ? parts[0] * 3600 + parts[1] * 60 + parts[2]
-            : 0;
+        if (!parts.every(Number.isFinite)) return 0;
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        return 0;
+    }
+
+    function isCallPickedUp() {
+        const status = document.querySelector('.status-call-start, .page-holder .wrapper .connect');
+        return (status?.textContent || '').toLowerCase().includes('picked up');
+    }
+
+    function findHangupButton() {
+        const candidates = [
+            ...document.querySelectorAll('.block-btn-call .el-button.el-button--danger'),
+            ...document.querySelectorAll('.el-button.el-button--danger'),
+            ...document.querySelectorAll('button, [role="button"]')
+        ];
+        return candidates.find((button) => {
+            if (button.disabled || button.getAttribute('aria-disabled') === 'true') return false;
+            const label = (button.innerText || button.textContent || '').trim().toLowerCase();
+            // Some CRM skins use an icon-only danger button, hence the danger
+            // class fallback in addition to the readable label checks.
+            return button.matches('.el-button.el-button--danger') || /hang.?up|end call|cancel call|disconnect/.test(label);
+        }) || null;
     }
 
     function isCarouselLead() {
@@ -259,7 +288,7 @@
         const hangupAt = Number(activeCall.hangupSeconds) || DEFAULT_HANGUP_SECONDS;
         const remaining = Math.max(0, hangupAt - elapsed);
         live.textContent = activeCall.status === 'in-call'
-            ? `Live call: ${elapsed}s elapsed · hangup in ${remaining}s`
+            ? `Live call: ${elapsed}s elapsed · hangup in ${remaining}s${activeCall.pickedUp ? ' · picked up' : ''}`
             : 'Live call: connecting…';
     }
 
