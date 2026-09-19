@@ -14,6 +14,91 @@
     const WORKER_ACTION = 'GREEN_FULL_AUTO_CALL';
     const DONE_ACTION = 'GREEN_FULL_AUTO_CALL_DONE';
     const DEFAULT_HANGUP_SECONDS = 35;
+    const ACTIVE_CALL_KEY = 'greenSearchFullAutoActiveCall';
+    const CALL_RESULT_KEY = 'greenSearchFullAutoCallResult';
+
+    const readActiveCall = () => {
+        try {
+            return JSON.parse(localStorage.getItem(ACTIVE_CALL_KEY) || 'null');
+        } catch (_) {
+            return null;
+        }
+    };
+
+    const writeActiveCall = (call) => localStorage.setItem(ACTIVE_CALL_KEY, JSON.stringify(call));
+
+    function callPageIsVisible() {
+        return Boolean(document.querySelector('.page-holder .wrapper .connect span, .block-btn-call, .timer'));
+    }
+
+    // A CRM call opens on its own call page/window. This watcher is deliberately
+    // started in every frame and top-level page so that the page containing the
+    // timer, rather than the lead iframe, owns answering and hanging up.
+    function startCallPageWatcher() {
+        let watcherRunning = false;
+        setInterval(() => {
+            if (watcherRunning || !callPageIsVisible()) return;
+            const activeCall = readActiveCall();
+            if (!activeCall || Date.now() - activeCall.startedAt > 120000 || activeCall.finishedAt) return;
+            watcherRunning = true;
+            monitorLiveCall(activeCall).finally(() => {
+                watcherRunning = false;
+            });
+        }, 250);
+    }
+
+    async function monitorLiveCall(initialCall) {
+        let activeCall = initialCall;
+        const deadline = Date.now() + Math.max(60000, (Number(activeCall.hangupSeconds) + 30) * 1000);
+
+        while (Date.now() < deadline) {
+            activeCall = readActiveCall();
+            if (!activeCall || activeCall.runId !== initialCall.runId || activeCall.leadId !== initialCall.leadId || activeCall.finishedAt) return;
+
+            const answerButton = document.querySelector('.block-btn-call .el-button.el-button--success, .block-btn-call button.el-button--success');
+            if (answerButton && !activeCall.answerClicked) {
+                activeCall.answerClicked = true;
+                writeActiveCall(activeCall);
+                answerButton.click();
+            }
+
+            const timer = document.querySelector('.timer');
+            if (timer) {
+                const seconds = parseTimerSeconds(timer.textContent);
+                activeCall.status = 'in-call';
+                activeCall.elapsedSeconds = seconds;
+                writeActiveCall(activeCall);
+
+                if (seconds >= Number(activeCall.hangupSeconds)) {
+                    // Mark first, then click: interval ticks or duplicate script
+                    // contexts cannot send a second hangup/call action.
+                    activeCall.finishedAt = Date.now();
+                    activeCall.status = 'hangup-requested';
+                    writeActiveCall(activeCall);
+                    const hangupButton = document.querySelector('.el-button.el-button--danger');
+                    if (hangupButton) hangupButton.click();
+                    localStorage.setItem(CALL_RESULT_KEY, JSON.stringify({
+                        runId: activeCall.runId,
+                        leadId: activeCall.leadId,
+                        status: 'success',
+                        elapsedSeconds: seconds,
+                        finishedAt: activeCall.finishedAt
+                    }));
+                    return;
+                }
+            }
+            await delay(200);
+        }
+    }
+
+    function parseTimerSeconds(value) {
+        const parts = String(value || '').trim().split(':').map(Number);
+        return parts.length === 3 && parts.every(Number.isFinite)
+            ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+            : 0;
+    }
+
+    startCallPageWatcher();
 
     // The script is loaded in every lead iframe as well. Only the iframe runs
     // the call controls; the top window owns the menu, API, and queue.
@@ -22,7 +107,7 @@
         window.addEventListener('message', async (event) => {
             if (event.data?.action !== WORKER_ACTION) return;
 
-            const { leadId, hangupSeconds } = event.data;
+            const { leadId, hangupSeconds, runId } = event.data;
             // A duplicate postMessage or a delayed iframe load must never start
             // a second call for the same lead.
             if (callAlreadyStarted) {
@@ -31,7 +116,7 @@
             }
             callAlreadyStarted = true;
             try {
-                await callLead(Number(hangupSeconds) || DEFAULT_HANGUP_SECONDS);
+                await callLead(leadId, runId, Number(hangupSeconds) || DEFAULT_HANGUP_SECONDS);
                 window.parent.postMessage({ action: DONE_ACTION, leadId, status: 'success' }, '*');
             } catch (error) {
                 window.parent.postMessage({ action: DONE_ACTION, leadId, status: 'error', error: error.message }, '*');
@@ -60,6 +145,7 @@
     let isRunning = false;
     let stopRequested = false;
     const handledLeadIds = new Set();
+    let activeRunId = null;
 
     function credentials() {
         const clean = (value) => typeof value === 'string' ? value.replace(/['"]+/g, '').trim() : value;
@@ -214,6 +300,7 @@
         if (isRunning) return;
         isRunning = true;
         stopRequested = false;
+        activeRunId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
         setRunning(true);
 
         const manager = document.getElementById('green-call-manager').value;
@@ -241,7 +328,7 @@
                     handledLeadIds.add(leadKey);
                     attempted++;
                     setStatus(`Calling ${attempted}/${pagination.totalItems || '?'} (page ${page}${totalPages ? `/${totalPages}` : ''})…`, completed);
-                    if (await processLead(leadId, hangupSeconds)) completed++;
+                    if (await processLead(leadId, hangupSeconds, activeRunId)) completed++;
                 }
                 if (!totalPages || page >= totalPages) break;
                 page++;
@@ -256,7 +343,7 @@
         }
     }
 
-    function processLead(leadId, hangupSeconds) {
+    function processLead(leadId, hangupSeconds, runId) {
         return new Promise((resolve) => {
             const iframe = document.createElement('iframe');
             iframe.src = `${crm.leadUrlBase}${encodeURIComponent(leadId)}`;
@@ -280,7 +367,7 @@
             window.addEventListener('message', onMessage);
             iframe.addEventListener('load', async () => {
                 await delay(1200);
-                iframe.contentWindow.postMessage({ action: WORKER_ACTION, leadId, hangupSeconds }, '*');
+                iframe.contentWindow.postMessage({ action: WORKER_ACTION, leadId, hangupSeconds, runId }, '*');
             }, { once: true });
         });
     }
@@ -295,8 +382,16 @@
         throw new Error(`Timed out waiting for ${selector}`);
     }
 
-    async function callLead(hangupSeconds) {
+    async function callLead(leadId, runId, hangupSeconds) {
         const callButton = await waitFor('.call-img.mr-2.pointer', 30000);
+        writeActiveCall({
+            runId,
+            leadId,
+            hangupSeconds,
+            startedAt: Date.now(),
+            status: 'starting',
+            answerClicked: false
+        });
         callButton.click();
 
         // Confirm Call and Refuse to Talk dialogs are rendered asynchronously.
@@ -333,17 +428,20 @@
             await delay(200);
         }
 
-        const timer = await waitFor('.timer', 30000);
-        const getSeconds = () => {
-            const parts = (timer.textContent || '').trim().split(':').map(Number);
-            return parts.length === 3 && parts.every(Number.isFinite) ? parts[0] * 3600 + parts[1] * 60 + parts[2] : 0;
-        };
-        while (getSeconds() < hangupSeconds) await delay(200);
-
-        const hangup = document.querySelector('.el-button.el-button--danger');
-        if (!hangup) throw new Error('Hangup button was not found');
-        hangup.click();
-        await delay(1200);
+        // The timer may be in this iframe or in the CRM's separate call page.
+        // Wait for the watcher on whichever page owns it to complete the call.
+        const deadline = Date.now() + Math.max(60000, (hangupSeconds + 35) * 1000);
+        while (Date.now() < deadline) {
+            const result = (() => {
+                try { return JSON.parse(localStorage.getItem(CALL_RESULT_KEY) || 'null'); } catch (_) { return null; }
+            })();
+            if (result?.runId === runId && result?.leadId === leadId) {
+                if (result.status === 'success') return;
+                throw new Error(result.error || 'Call did not complete');
+            }
+            await delay(200);
+        }
+        throw new Error('Timed out waiting for the call page timer');
     }
 
     function init() {
