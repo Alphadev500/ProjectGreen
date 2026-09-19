@@ -16,6 +16,17 @@
     const DEFAULT_HANGUP_SECONDS = 35;
     const ACTIVE_CALL_KEY = 'greenSearchFullAutoActiveCall';
     const CALL_RESULT_KEY = 'greenSearchFullAutoCallResult';
+    const CATEGORY_LABELS = {
+        becomeacquainted: 'Become Acquainted',
+        't.property.category.becomeacquainted': 'Become Acquainted',
+        't.property.category.acquaintance': 'Acquaintance',
+        't.property.category.luxuriousacquaintance': 'Luxurious Acquaintance',
+        't.property.category.acquaintancecalledback': 'Acquaintance Calledback',
+        't.property.category.failedacquaintance': 'Failed Acquaintance',
+        't.property.category.playedlastweek': 'Played Last Week',
+        't.property.category.playedthisweek': 'Played This Week',
+        't.property.category.retention': 'Retention'
+    };
 
     const readActiveCall = () => {
         try {
@@ -342,7 +353,8 @@
             (Array.isArray(categories) ? categories : Object.entries(categories).map(([id, category]) => ({ id, category }))).forEach((item) => {
                 const category = item?.category ?? item;
                 const value = category?.value ?? category?.id ?? item?.id ?? category;
-                const label = category?.name ?? category?.title ?? String(value);
+                const rawLabel = String(category?.name ?? category?.title ?? value);
+                const label = CATEGORY_LABELS[rawLabel] || rawLabel;
                 categorySelect.add(new Option(label, String(value)));
             });
 
