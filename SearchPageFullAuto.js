@@ -146,6 +146,7 @@
     let stopRequested = false;
     const handledLeadIds = new Set();
     let activeRunId = null;
+    let previousAutoCallingSetting = null;
 
     function credentials() {
         const clean = (value) => typeof value === 'string' ? value.replace(/['"]+/g, '').trim() : value;
@@ -301,6 +302,11 @@
         isRunning = true;
         stopRequested = false;
         activeRunId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        // Other installed FullAutoCall scripts auto-click the same lead button
+        // on iframe load. Disable only that automatic path during this queue;
+        // this script still performs its own one deliberate click per lead.
+        previousAutoCallingSetting = localStorage.getItem('AutoCalling');
+        localStorage.setItem('AutoCalling', 'false');
         setRunning(true);
 
         const manager = document.getElementById('green-call-manager').value;
@@ -338,6 +344,9 @@
             console.error('Full auto call stopped:', error);
             setStatus(`Stopped: ${error.message}`, completed);
         } finally {
+            if (previousAutoCallingSetting === null) localStorage.removeItem('AutoCalling');
+            else localStorage.setItem('AutoCalling', previousAutoCallingSetting);
+            previousAutoCallingSetting = null;
             isRunning = false;
             setRunning(false);
         }
