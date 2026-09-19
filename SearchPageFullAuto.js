@@ -49,6 +49,7 @@
 
     async function monitorLiveCall(initialCall) {
         let activeCall = initialCall;
+        let sawCallTimer = false;
         const deadline = Date.now() + Math.max(60000, (Number(activeCall.hangupSeconds) + 30) * 1000);
 
         while (Date.now() < deadline) {
@@ -64,6 +65,7 @@
 
             const timer = document.querySelector('.timer');
             if (timer) {
+                sawCallTimer = true;
                 const seconds = parseTimerSeconds(timer.textContent);
                 activeCall.status = 'in-call';
                 activeCall.elapsedSeconds = seconds;
@@ -86,6 +88,22 @@
                     }));
                     return;
                 }
+            } else if (sawCallTimer) {
+                // A timer that was present and then disappeared means the call
+                // ended in the call tab (including when the user hangs up).
+                // Finish this lead immediately instead of waiting for the
+                // configured automatic-hangup time.
+                activeCall.finishedAt = Date.now();
+                activeCall.status = 'ended-early';
+                writeActiveCall(activeCall);
+                localStorage.setItem(CALL_RESULT_KEY, JSON.stringify({
+                    runId: activeCall.runId,
+                    leadId: activeCall.leadId,
+                    status: 'success',
+                    elapsedSeconds: Number(activeCall.elapsedSeconds) || 0,
+                    finishedAt: activeCall.finishedAt
+                }));
+                return;
             }
             await delay(200);
         }
@@ -96,6 +114,11 @@
         return parts.length === 3 && parts.every(Number.isFinite)
             ? parts[0] * 3600 + parts[1] * 60 + parts[2]
             : 0;
+    }
+
+    function isCarouselLead() {
+        const pageHtml = document.documentElement?.outerHTML?.toLowerCase() || '';
+        return pageHtml.includes('carusel') || pageHtml.includes('carousel');
     }
 
     startCallPageWatcher();
@@ -445,6 +468,14 @@
                         refuseButton.click();
                     }
                 } else if (!text.includes('refuse to talk') && !callConfirmed) {
+                    // FullAutoCall treats carousel numbers specially: after
+                    // pressing the call icon, that UI opens/starts its own call.
+                    // Clicking the normal Yes button as well creates a second
+                    // call, so only wait for its call-page timer here.
+                    if (isCarouselLead()) {
+                        callConfirmed = true;
+                        continue;
+                    }
                     const yesButton = enabledButton('yes');
                     if (yesButton) {
                         callConfirmed = true;
