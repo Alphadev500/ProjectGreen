@@ -18,10 +18,18 @@
     // The script is loaded in every lead iframe as well. Only the iframe runs
     // the call controls; the top window owns the menu, API, and queue.
     if (window.self !== window.top) {
+        let callAlreadyStarted = false;
         window.addEventListener('message', async (event) => {
             if (event.data?.action !== WORKER_ACTION) return;
 
             const { leadId, hangupSeconds } = event.data;
+            // A duplicate postMessage or a delayed iframe load must never start
+            // a second call for the same lead.
+            if (callAlreadyStarted) {
+                window.parent.postMessage({ action: DONE_ACTION, leadId, status: 'error', error: 'Call already started for this iframe.' }, '*');
+                return;
+            }
+            callAlreadyStarted = true;
             try {
                 await callLead(Number(hangupSeconds) || DEFAULT_HANGUP_SECONDS);
                 window.parent.postMessage({ action: DONE_ACTION, leadId, status: 'success' }, '*');
@@ -51,6 +59,7 @@
     const pagination = { totalItems: 0, totalPages: 0, limit: 20 };
     let isRunning = false;
     let stopRequested = false;
+    const handledLeadIds = new Set();
 
     function credentials() {
         const clean = (value) => typeof value === 'string' ? value.replace(/['"]+/g, '').trim() : value;
@@ -225,6 +234,11 @@
 
                 for (const leadId of result.ids) {
                     if (stopRequested) break;
+                    const leadKey = String(leadId);
+                    if (handledLeadIds.has(leadKey)) continue;
+                    // Record before loading the iframe so an API page overlap,
+                    // retry, or moving pagination cannot call a user twice.
+                    handledLeadIds.add(leadKey);
                     attempted++;
                     setStatus(`Calling ${attempted}/${pagination.totalItems || '?'} (page ${page}${totalPages ? `/${totalPages}` : ''})…`, completed);
                     if (await processLead(leadId, hangupSeconds)) completed++;
@@ -287,15 +301,33 @@
 
         // Confirm Call and Refuse to Talk dialogs are rendered asynchronously.
         const confirmDeadline = Date.now() + 12000;
+        let refuseToTalkConfirmed = false;
+        let callConfirmed = false;
         while (Date.now() < confirmDeadline) {
             const dialogs = [...document.querySelectorAll('.el-dialog')];
             for (const dialog of dialogs) {
                 const text = (dialog.textContent || '').toLowerCase();
-                const button = [...dialog.querySelectorAll('button, [role="button"]')].find((item) => {
-                    const label = (item.textContent || '').trim().toLowerCase();
-                    return !item.disabled && item.getAttribute('aria-disabled') !== 'true' && (label === 'yes' || (text.includes('refuse to talk') && label === 'yes, call'));
-                });
-                if (button) button.click();
+                const buttons = [...dialog.querySelectorAll('button, [role="button"]')];
+                const enabledButton = (label) => buttons.find((item) =>
+                    !item.disabled && item.getAttribute('aria-disabled') !== 'true' && (item.textContent || '').trim().toLowerCase() === label
+                );
+
+                // Each dialog action is intentionally clicked once. Re-clicking
+                // the same confirmation while a call is connecting starts a
+                // duplicate call in this CRM.
+                if (text.includes('refuse to talk') && !refuseToTalkConfirmed) {
+                    const refuseButton = enabledButton('yes, call');
+                    if (refuseButton) {
+                        refuseToTalkConfirmed = true;
+                        refuseButton.click();
+                    }
+                } else if (!text.includes('refuse to talk') && !callConfirmed) {
+                    const yesButton = enabledButton('yes');
+                    if (yesButton) {
+                        callConfirmed = true;
+                        yesButton.click();
+                    }
+                }
             }
             if (document.querySelector('.timer')) break;
             await delay(200);
