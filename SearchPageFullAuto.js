@@ -431,10 +431,12 @@
             document.body.appendChild(iframe);
 
             let settled = false;
+            let resultPoll = null;
             const finish = (success) => {
                 if (settled) return;
                 settled = true;
                 clearTimeout(timeout);
+                clearInterval(resultPoll);
                 window.removeEventListener('message', onMessage);
                 iframe.remove();
                 resolve(success);
@@ -445,6 +447,18 @@
                 finish(event.data.status === 'success');
             };
             window.addEventListener('message', onMessage);
+            // The CRM can navigate the iframe into its call-tab route. That
+            // destroys the iframe worker before it can postMessage back, so the
+            // parent queue also observes the shared completion record itself.
+            resultPoll = setInterval(() => {
+                let result = null;
+                try {
+                    result = JSON.parse(localStorage.getItem(CALL_RESULT_KEY) || 'null');
+                } catch (_) {}
+                if (result?.runId === runId && String(result.leadId) === String(leadId)) {
+                    finish(result.status === 'success');
+                }
+            }, 150);
             iframe.addEventListener('load', async () => {
                 await delay(1200);
                 iframe.contentWindow.postMessage({ action: WORKER_ACTION, leadId, hangupSeconds, runId }, '*');
