@@ -191,7 +191,7 @@
                 <label style="display:block;margin-bottom:12px;font-size:12px;color:#aaa">Hangup time (seconds)
                     <input id="green-call-hangup" type="number" min="1" step="1" value="${localStorage.getItem('greenSearchFullAutoHangup') || DEFAULT_HANGUP_SECONDS}" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:6px;background:#2b2b36;border:1px solid #444;border-radius:4px;color:#fff">
                 </label>
-                <div style="background:#2b2b36;padding:10px;border-radius:4px;margin-bottom:10px"><div id="green-call-status" style="font-size:13px;color:#e6a23c">Loading filters…</div><div id="green-call-count" style="font-size:12px;color:#aaa;margin-top:5px">Completed: 0</div></div>
+                <div style="background:#2b2b36;padding:10px;border-radius:4px;margin-bottom:10px"><div id="green-call-status" style="font-size:13px;color:#e6a23c">Loading filters…</div><div id="green-call-live" style="font-size:12px;color:#67c23a;margin-top:5px">Live call: waiting</div><div id="green-call-count" style="font-size:12px;color:#aaa;margin-top:5px">Completed: 0</div></div>
                 <button id="green-call-start" disabled style="width:100%;padding:10px;background:#67c23a;border:0;border-radius:4px;color:white;font-weight:bold;cursor:pointer">Loading…</button>
                 <button id="green-call-stop" style="display:none;width:100%;padding:10px;background:#f56c6c;border:0;border-radius:4px;color:white;font-weight:bold;cursor:pointer">Stop after current lead</button>
             </div>`;
@@ -209,6 +209,7 @@
             event.target.value = value;
             localStorage.setItem('greenSearchFullAutoHangup', String(value));
         });
+        setInterval(updateLiveCallDisplay, 250);
     }
 
     function setStatus(message, completed) {
@@ -221,6 +222,22 @@
     function setRunning(running) {
         document.getElementById('green-call-start').style.display = running ? 'none' : 'block';
         document.getElementById('green-call-stop').style.display = running ? 'block' : 'none';
+    }
+
+    function updateLiveCallDisplay() {
+        const live = document.getElementById('green-call-live');
+        if (!live) return;
+        const activeCall = readActiveCall();
+        if (!isRunning || !activeCall || activeCall.runId !== activeRunId) {
+            live.textContent = 'Live call: waiting';
+            return;
+        }
+        const elapsed = Number(activeCall.elapsedSeconds) || 0;
+        const hangupAt = Number(activeCall.hangupSeconds) || DEFAULT_HANGUP_SECONDS;
+        const remaining = Math.max(0, hangupAt - elapsed);
+        live.textContent = activeCall.status === 'in-call'
+            ? `Live call: ${elapsed}s elapsed · hangup in ${remaining}s`
+            : 'Live call: connecting…';
     }
 
     function setPagination(source) {
@@ -356,7 +373,9 @@
         return new Promise((resolve) => {
             const iframe = document.createElement('iframe');
             iframe.src = `${crm.leadUrlBase}${encodeURIComponent(leadId)}`;
-            iframe.style.cssText = 'position:fixed;left:-10000px;top:-10000px;width:1000px;height:800px;border:0;visibility:hidden;';
+            // Keep the lead/call page visible while it is processed. The control
+            // panel remains above it on the right side.
+            iframe.style.cssText = 'position:fixed;z-index:999998;left:16px;top:70px;width:calc(100vw - 340px);height:calc(100vh - 86px);border:1px solid #444;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.35);';
             document.body.appendChild(iframe);
 
             let settled = false;
